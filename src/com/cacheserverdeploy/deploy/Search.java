@@ -4,12 +4,11 @@
 package com.cacheserverdeploy.deploy;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.Queue;
-
-import com.sun.xml.internal.bind.v2.schemagen.xmlschema.Occurs;
 
 /**
  * @author JwZhou
@@ -180,8 +179,18 @@ public class Search {
 		
 	}
 	
-	public boolean isFeasible() {
-		//
+	public static boolean isFeasible(ArrayList<Route> solution) {
+		int[] demands = new int[Graph.clientVertexNum];
+		for (Route route : solution) {
+			demands[route.client] += route.occupiedBandwidth;
+		}
+		System.out.println(Arrays.toString(demands));
+		System.out.println(Arrays.toString(Arrays.copyOfRange(Graph.clientDemand, 0, Graph.clientVertexNum)));
+		for (int i = 0; i < Graph.clientVertexNum; i++) {
+			if (demands[i] != Graph.clientDemand[i]) {
+				return false;
+			}
+		}
 		return true;
 	}
 }

@@ -50,6 +50,6 @@ public class Route {
 	
 	@Override
 	public String toString() {
-		return nodes.toString() + " " + occupiedBandwidth;
+		return nodes.toString() + " " + occupiedBandwidth + " " + client;
 	}
 }
