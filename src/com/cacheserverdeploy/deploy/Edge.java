@@ -3,7 +3,9 @@
  */
 package com.cacheserverdeploy.deploy;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -12,7 +14,7 @@ import java.util.Map;
  */
 public class Edge implements Comparable<Edge> {
 	
-	public static Map<int[], Edge> edgeMap = new HashMap<int[], Edge>();
+	public static Map<List<String>, Edge> edgeMap = new HashMap<List<String>, Edge>();
 	public final int source;
 	public final int target;
 	public final int cost;
@@ -23,7 +25,7 @@ public class Edge implements Comparable<Edge> {
 		this.target = target;
 		this.cost = cost;
 		this.bandwidth = bandwidth;
-		edgeMap.put(new int[]{source, target}, this);
+		edgeMap.put(Arrays.asList(Integer.toString(source), Integer.toString(target)), this);
 	}
 	
 	// Reversely.

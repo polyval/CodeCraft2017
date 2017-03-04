@@ -4,6 +4,7 @@
 package com.cacheserverdeploy.deploy;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * @author JwZhou
@@ -16,7 +17,7 @@ public class Route {
 	public int maxBandwidth;
 	public int averageCost;
 	public int occupiedBandwidth;
-	public ArrayList<Integer> nodes;
+	public ArrayList<Integer> nodes = new ArrayList<>();
 	
 	public Route(int server, int client) {
 		this.server = server;
@@ -31,7 +32,7 @@ public class Route {
 		averageCost = 0;
 		maxBandwidth = Integer.MAX_VALUE;
 		for (int i = 0; i < nodes.size() - 1; i++) {
-			Edge edge = Edge.edgeMap.get(new int[]{nodes.get(i), nodes.get(i + 1)});
+			Edge edge = Edge.edgeMap.get(Arrays.asList(Integer.toString(nodes.get(i)), Integer.toString(nodes.get(i + 1))));
 			maxBandwidth = Math.min(maxBandwidth, edge.bandwidth);
 			averageCost += edge.cost;
 		}
@@ -42,8 +43,13 @@ public class Route {
 	 */
 	public void updateEdgesBandwidth() {
 		for (int i = 0; i < nodes.size() - 1; i++) {
-			Edge edge = Edge.edgeMap.get(new int[]{nodes.get(i), nodes.get(i + 1)});
+			Edge edge = Edge.edgeMap.get(Arrays.asList(Integer.toString(nodes.get(i)), Integer.toString(nodes.get(i + 1))));
 			edge.bandwidth -= occupiedBandwidth;
 		}
+	}
+	
+	@Override
+	public String toString() {
+		return nodes.toString() + " " + occupiedBandwidth;
 	}
 }

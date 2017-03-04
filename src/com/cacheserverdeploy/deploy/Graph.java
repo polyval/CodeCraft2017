@@ -41,6 +41,9 @@ public class Graph {
 		
 		// Faster than simply add elements one by one.
 		adj = (ArrayList<Edge>[]) new ArrayList[vertexNum];
+		for (int i = 0; i < vertexNum; i++) {
+			adj[i] = new ArrayList<>();
+		}
 		
 		serverCost = Integer.parseInt(graphContent[2]);
 		

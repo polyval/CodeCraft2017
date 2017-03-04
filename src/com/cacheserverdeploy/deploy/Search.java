@@ -9,17 +9,19 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.Queue;
 
+import com.sun.xml.internal.bind.v2.schemagen.xmlschema.Occurs;
+
 /**
  * @author JwZhou
  *
  */
 public class Search {
 	
-	public ArrayList<Node> servers = new ArrayList<>();
-	public ArrayList<Node> clientNodes = new ArrayList<>(Graph.clientVertexNum);
-	public ArrayList<Route> solution = new ArrayList<>();
+	public static ArrayList<Node> servers = new ArrayList<>();
+	public static ArrayList<Node> clientNodes = new ArrayList<>(Graph.clientVertexNum);
+	public static ArrayList<Route> solution = new ArrayList<>();
 	
-	public void initialize() {
+	public static void initialize() {
 		// Get all the client nodes.
 		for (int i = 0; i < Graph.clientVertexNum; i++) {
 			clientNodes.add(Graph.nodes[Graph.clientVertexId[i]]);
@@ -37,7 +39,7 @@ public class Search {
 	/*
 	 *  HotSpot heuristic to construct the initial solution.
 	 */
-	public void hotSpot(ArrayList<Node> unserverdClients) {
+	public static void hotSpot(ArrayList<Node> unserverdClients) {
 		
 		Collections.sort(unserverdClients, new Comparator<Node>() {
 			@Override
@@ -71,7 +73,13 @@ public class Search {
 				// Add one route to solution.
 				Route route = new Route(serverNodeId, firstClient.clientId);
 				route.nodes.add(firstClient.vertexId);
-				route.occupiedBandwidth = edge.bandwidth;
+				route.computeBandwidthAndCost();
+				route.occupiedBandwidth = Math.min(firstClient.demands, route.maxBandwidth);
+				// Indicate this route is unavailable.
+				if (route.occupiedBandwidth == 0) {
+					continue;
+				}
+				firstClient.demands -= route.occupiedBandwidth;
 				route.updateEdgesBandwidth();
 				solution.add(route);
 				break;
@@ -86,7 +94,8 @@ public class Search {
 			
 			// Add one route to solution.
 			Route route = new Route(firstClient.vertexId, firstClient.clientId);
-			route.occupiedBandwidth = firstClient.demands;
+			route.occupiedBandwidth = Math.min(firstClient.demands, route.maxBandwidth);
+			firstClient.demands -= route.occupiedBandwidth;
 			solution.add(route);
 			
 			serverNodeId = firstClient.vertexId;
@@ -104,6 +113,10 @@ public class Search {
 				continue;
 			}
 			newRoute.occupiedBandwidth = Math.min(clientAttachedNode.demands, newRoute.maxBandwidth);
+			if (newRoute.occupiedBandwidth == 0) {
+				continue;
+			}
+			clientAttachedNode.demands -= newRoute.occupiedBandwidth;
 			newRoute.updateEdgesBandwidth();
 			solution.add(newRoute);
 			// This client has been served.
@@ -117,9 +130,9 @@ public class Search {
 	}
 	
 	/*
-	 * Returns routes to clients from one node。
+	 * Returns routes to clients from one node, one client one route, it will lost some routes.
 	 */
-	public ArrayList<ArrayList<Integer>> bfsToClients(Node node) {
+	public static ArrayList<ArrayList<Integer>> bfsToClients(Node node) {
 		// Mark if a node is visited.
 		boolean[] mark = new boolean[Graph.vertexNum];
 		Queue<Integer> queue = new LinkedList<>();
@@ -127,7 +140,9 @@ public class Search {
 		ArrayList<ArrayList<Integer>> routesToClients = new ArrayList<ArrayList<Integer>>();
 		
 		queue.add(node.vertexId);
-		trace.add(new ArrayList<Integer>(node.vertexId));
+		ArrayList<Integer> first = new ArrayList<>();
+		first.add(node.vertexId);
+		trace.add(first);
 		while (!queue.isEmpty()) {
 			int size = queue.size();
 			
@@ -147,9 +162,9 @@ public class Search {
 						if (!mark[edge.target]) {
 							queue.add(edge.target);
 							route.add(edge.target);
-							trace.add(route);
+							trace.add(new ArrayList<>(route));
+							route.remove(route.size() - 1);
 						}
-						route.remove(route.size() - 1);
 					}
 				}
 			}	

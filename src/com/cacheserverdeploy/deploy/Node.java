@@ -19,4 +19,9 @@ public class Node {
 	public Node(int vertexId) {
 		this.vertexId = vertexId;
 	}
+	
+	@Override
+	public String toString() {
+		return Integer.toString(this.vertexId);
+	}
 }
