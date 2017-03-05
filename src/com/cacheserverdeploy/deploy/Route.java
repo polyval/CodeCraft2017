@@ -32,18 +32,18 @@ public class Route {
 		averageCost = 0;
 		maxBandwidth = Integer.MAX_VALUE;
 		for (int i = 0; i < nodes.size() - 1; i++) {
-			Edge edge = Edge.edgeMap.get(Arrays.asList(Integer.toString(nodes.get(i)), Integer.toString(nodes.get(i + 1))));
+			Edge edge = Edge.edgeMap.get(new Pair<Integer, Integer>(nodes.get(i), nodes.get(i + 1)));
 			maxBandwidth = Math.min(maxBandwidth, edge.bandwidth);
 			averageCost += edge.cost;
 		}
 	}
 	
-	/*
+	/**
 	 * Updates edges' bandwidth.
 	 */
 	public void updateEdgesBandwidth() {
 		for (int i = 0; i < nodes.size() - 1; i++) {
-			Edge edge = Edge.edgeMap.get(Arrays.asList(Integer.toString(nodes.get(i)), Integer.toString(nodes.get(i + 1))));
+			Edge edge = Edge.edgeMap.get(new Pair<Integer, Integer>(nodes.get(i), nodes.get(i + 1)));
 			edge.bandwidth -= occupiedBandwidth;
 		}
 	}

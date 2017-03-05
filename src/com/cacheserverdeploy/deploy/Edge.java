@@ -14,7 +14,7 @@ import java.util.Map;
  */
 public class Edge implements Comparable<Edge> {
 	
-	public static Map<List<String>, Edge> edgeMap = new HashMap<List<String>, Edge>();
+	public static Map<Pair<Integer, Integer>, Edge> edgeMap = new HashMap<>();
 	public final int source;
 	public final int target;
 	public final int cost;
@@ -25,7 +25,7 @@ public class Edge implements Comparable<Edge> {
 		this.target = target;
 		this.cost = cost;
 		this.bandwidth = bandwidth;
-		edgeMap.put(Arrays.asList(Integer.toString(source), Integer.toString(target)), this);
+		edgeMap.put(new Pair<Integer, Integer>(source, target), this);
 	}
 	
 	// Reversely.
