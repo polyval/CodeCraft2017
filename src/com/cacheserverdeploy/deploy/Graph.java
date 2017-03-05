@@ -20,16 +20,15 @@ public class Graph {
 	public static int clientVertexNum = 0;
 	
 	public static int serverCost = 0;
-	public static int[] clientVertexId = new int[clientVertexNumMax];
-	public static int[] clientDemand = new int[clientVertexNumMax];
+	public static int[] clientVertexId;
+	public static int[] clientDemand;
 	// Adjacency lists;
 	public static ArrayList<Edge>[] adj;
-	// Maybe faster than ArrayList.
-	public static Node[] nodes = new Node[vertexNumMax];
+	public static Node[] nodes;
 	
 	// Used to reset the data.
- 	public static int[][] edgeWeight = new int[vertexNumMax][vertexNumMax];
-	public static int[][] edgeBandwidth = new int[vertexNumMax][vertexNumMax];
+ 	public static int[][] edgeWeight;
+	public static int[][] edgeBandwidth;
 	
 	
 	@SuppressWarnings("unchecked")
@@ -46,6 +45,14 @@ public class Graph {
 		}
 		
 		serverCost = Integer.parseInt(graphContent[2]);
+		
+		// Initialize.
+		clientVertexId = new int[clientVertexNum];
+		clientDemand = new int[clientVertexNum];
+		edgeWeight = new int[vertexNum][vertexNum];
+		edgeBandwidth = new int[vertexNum][vertexNum];
+		nodes = new Node[vertexNum];
+	
 		
 		// Read edges
 		for (int i = 4; i < edgeNum + 4; i++) {
