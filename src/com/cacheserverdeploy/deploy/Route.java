@@ -10,7 +10,7 @@ import java.util.Arrays;
  * @author JwZhou
  *
  */
-public class Route {
+public class Route implements Comparable<Route>{
 	
 	public int client;
 	public int server;
@@ -51,5 +51,13 @@ public class Route {
 	@Override
 	public String toString() {
 		return nodes.toString() + " " + occupiedBandwidth + " " + client;
+	}
+
+	@Override
+	public int compareTo(Route other) {
+		if (this.averageCost != other.averageCost) {
+			return this.averageCost - other.averageCost;
+		}
+		return other.maxBandwidth - this.maxBandwidth;
 	}
 }
