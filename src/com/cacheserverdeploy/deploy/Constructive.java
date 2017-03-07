@@ -7,6 +7,7 @@ import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 
 /**
  * @author JwZhou
@@ -31,14 +32,12 @@ public class Constructive {
 			int lowerBound = Integer.MAX_VALUE;
 			Node newServer = null;
 			ArrayList<Route> bestPaths = new ArrayList<>();
-			ArrayList<Integer> bestOccupiedDemands = new ArrayList<>();
 			
 			for (Node node : Graph.nodes) {
 				if (!node.isServer) {
 					// Cost induced by setting this node as server.
 					int newCost = 0;
-					// For restoring the client demands.
-					int[] curClientDemands = getCurClientDemands();
+					
 					// For restoring the paths.
 					ArrayList<Integer> curOccupiedDemands = new ArrayList<>();
 					ArrayList<Route> addedPaths = new ArrayList<>();
@@ -47,11 +46,7 @@ public class Constructive {
 					for (Node clientNode : Graph.clientNodes) {
 						// Client node that still has demands.
 						if (clientNode.demands > 0) {
-							// There is no cost.
-							if (node.equals(clientNode)) {
-								clientNode.demands = 0;
-								continue;
-							}
+							
 							// Shortest paths from one node to client node.
 							for (Route path : Route.shortestPaths.get(new Pair<>(node.vertexId, clientNode.vertexId))) {
 								// No need to add this path.
@@ -78,19 +73,16 @@ public class Constructive {
 						newServer = node;
 						lowerBound = newCost;
 						bestPaths = addedPaths;
-						bestOccupiedDemands = curOccupiedDemands;
 					}
 					
-					// Restore the bandwidth and demand.
-					restoreClientDemands(curClientDemands);
 					restorePaths(addedPaths, curOccupiedDemands);
 				}
 			}
 			// Update the solution
-			restorePaths(bestPaths, bestOccupiedDemands);
-			if (newServer.clientId != -1) {
-				Graph.clientNodes[newServer.clientId].demands = 0;
+			for (Route path : bestPaths) {
+				addPath(path);
 			}
+
 			Search.servers.add(newServer);
 			Search.solution.addAll(bestPaths);
 		}
@@ -107,22 +99,8 @@ public class Constructive {
 		if (path.occupiedBandwidth == path.maxBandwidth) {
 			return 0;
 		}
-		path.computeBandwidthAndCost();
-		path.assignBandWidthToClient();
-		path.updateEdgesBandwidth();
+		path.addPath();
 		return path.averageCost * path.occupiedBandwidth;
-	}
-	
-	/**
-	 * Get client demands in current state.
-	 * @return
-	 */
-	public static int[] getCurClientDemands() {
-		int[] curClientDemands = new int[Graph.clientVertexNum];
-		for (Node clientNode : Graph.clientNodes) {
-			curClientDemands[clientNode.clientId] = clientNode.demands;
-		}
-		return curClientDemands;
 	}
 	
 	/**
@@ -139,21 +117,11 @@ public class Constructive {
 	}
 	
 	/**
-	 * Restores all the clients' demands.
-	 * @param clientDemands
-	 */
-	public static void restoreClientDemands(int[] clientDemands) {
-		for (Node clientNode : Graph.clientNodes) {
-			clientNode.demands = clientDemands[clientNode.clientId];
-		}
-	}
-	
-	/**
 	 * Restores all the paths.
 	 * @param paths
 	 * @param occupiedBandwidths
 	 */
-	public static void restorePaths(ArrayList<Route> paths, ArrayList<Integer> occupiedBandwidths) {
+	public static void restorePaths(ArrayList<Route> paths, List<Integer> occupiedBandwidths) {
 		if (paths.size() != occupiedBandwidths.size()) {
 			throw new InvalidParameterException();
 		}
