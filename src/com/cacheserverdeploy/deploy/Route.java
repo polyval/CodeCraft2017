@@ -6,6 +6,7 @@ package com.cacheserverdeploy.deploy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -20,6 +21,7 @@ public class Route implements Comparable<Route>{
 	public int averageCost;
 	public int occupiedBandwidth;
 	public ArrayList<Integer> nodes = new ArrayList<>();
+	public List<Edge> edges = new ArrayList<>();
 	public static Map<Pair<Integer, Integer>, ArrayList<Route>> shortestPaths = new HashMap<>();
 	
 	public Route(int server, int client) {
@@ -28,14 +30,25 @@ public class Route implements Comparable<Route>{
 		nodes.add(server);
 	}
 	
+	public List<Edge> getEdges() {
+		if (edges.isEmpty()) {
+			for (int i = 0; i < nodes.size() - 1; i++) {
+				edges.add(Edge.edgeMap.get(new Pair<Integer, Integer>(nodes.get(i), nodes.get(i + 1))));
+			}
+		}
+		return edges;
+	}
+	
 	/**
 	 * Computes the maximum bandwidth and average cost.
 	 */
 	public void computeBandwidthAndCost() {
 		averageCost = 0;
 		maxBandwidth = Integer.MAX_VALUE;
-		for (int i = 0; i < nodes.size() - 1; i++) {
-			Edge edge = Edge.edgeMap.get(new Pair<Integer, Integer>(nodes.get(i), nodes.get(i + 1)));
+		
+		getEdges();
+		
+		for (Edge edge : edges) {
 			maxBandwidth = Math.min(maxBandwidth, edge.bandwidth);
 			averageCost += edge.cost;
 		}
@@ -51,27 +64,44 @@ public class Route implements Comparable<Route>{
 		}
 	}
 	
-	public void assignBandWidthToClient() {
-		this.occupiedBandwidth = Math.min(maxBandwidth, Graph.nodes[client].demands);
-		Graph.nodes[client].demands -= this.occupiedBandwidth;
-	}
-	
+	/**
+	 * 
+	 * @param occupiedBandwidth - last time's occupied bandwidth.
+	 */
 	public void restorePath(int occupiedBandwidth) {
+		removePath();
 		this.occupiedBandwidth = occupiedBandwidth;
-		Graph.nodes[client].demands += this.occupiedBandwidth;
-		computeBandwidthAndCost();
-		restoreEdgesBandwidth();
+		
+		Graph.nodes[client].demands -= this.occupiedBandwidth;
+		updateEdgesBandwidth();
 	}
 	
 	/**
-	 * Restores edges' available bandwidth.
+	 * Adds this path to network.
 	 */
-	private void restoreEdgesBandwidth() {
-		for (int i = 0; i < nodes.size() - 1; i++) {
-			Edge edge = Edge.edgeMap.get(new Pair<Integer, Integer>(nodes.get(i), nodes.get(i + 1)));
+	public void addPath() {
+		computeBandwidthAndCost();
+		this.occupiedBandwidth = Math.min(maxBandwidth, Graph.nodes[client].demands);
+		Graph.nodes[client].demands -= this.occupiedBandwidth;
+		updateEdgesBandwidth();
+	}
+	
+	/**
+	 * Removes this path from network.
+	 */
+	public void removePath() {
+		for (Edge edge : edges) {
 			edge.bandwidth += occupiedBandwidth;
 		}
+		Graph.nodes[client].demands += occupiedBandwidth;
+		occupiedBandwidth = 0;
+		computeBandwidthAndCost();
 	}
+	
+	public int getClientRemaningDemands() {
+		return Graph.nodes[client].demands;
+	}
+	
 	
 	@Override
 	public String toString() {
