@@ -22,6 +22,7 @@ public class Graph {
 	public static int serverCost = 0;
 	public static int[] clientVertexId;
 	public static int[] clientDemand;
+	public static Node[] clientNodes;
 	// Adjacency lists;
 	public static ArrayList<Edge>[] adj;
 	public static Node[] nodes;
@@ -49,10 +50,10 @@ public class Graph {
 		// Initialize.
 		clientVertexId = new int[clientVertexNum];
 		clientDemand = new int[clientVertexNum];
+		clientNodes = new Node[clientVertexNum];
 		edgeWeight = new int[vertexNum][vertexNum];
 		edgeBandwidth = new int[vertexNum][vertexNum];
 		nodes = new Node[vertexNum];
-	
 		
 		// Read edges
 		for (int i = 4; i < edgeNum + 4; i++) {
@@ -91,6 +92,7 @@ public class Graph {
 			clientDemand[clientId] = demand;
 			nodes[attachedVertexId].clientId = clientId;
 			nodes[attachedVertexId].demands = demand;
+			clientNodes[clientId] = nodes[attachedVertexId];
  		}
 		
 		
