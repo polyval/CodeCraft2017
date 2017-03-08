@@ -15,12 +15,14 @@ import java.util.Map;
  */
 public class Route implements Comparable<Route>{
 	
+	// ID of the end of the path.
 	public int client;
+	// ID of the start of the path.
 	public int server;
 	public int maxBandwidth;
 	public int averageCost;
 	public int occupiedBandwidth;
-	public ArrayList<Integer> nodes = new ArrayList<>();
+	public List<Integer> nodes = new ArrayList<>();
 	public List<Edge> edges = new ArrayList<>();
 	public static Map<Pair<Integer, Integer>, ArrayList<Route>> shortestPaths = new HashMap<>();
 	
@@ -28,6 +30,12 @@ public class Route implements Comparable<Route>{
 		this.server = server;
 		this.client = client;
 		nodes.add(server);
+	}
+	
+	public Route(List<Integer> nodes) {
+		this.server = nodes.get(0);
+		this.client = nodes.get(nodes.size() - 1);
+		this.nodes = nodes;
 	}
 	
 	public List<Edge> getEdges() {
@@ -46,9 +54,7 @@ public class Route implements Comparable<Route>{
 		averageCost = 0;
 		maxBandwidth = Integer.MAX_VALUE;
 		
-		getEdges();
-		
-		for (Edge edge : edges) {
+		for (Edge edge : getEdges()) {
 			maxBandwidth = Math.min(maxBandwidth, edge.bandwidth);
 			averageCost += edge.cost;
 		}
@@ -58,8 +64,7 @@ public class Route implements Comparable<Route>{
 	 * Updates edges' bandwidth.
 	 */
 	public void updateEdgesBandwidth() {
-		for (int i = 0; i < nodes.size() - 1; i++) {
-			Edge edge = Edge.edgeMap.get(new Pair<Integer, Integer>(nodes.get(i), nodes.get(i + 1)));
+		for (Edge edge : getEdges()) {
 			edge.bandwidth -= occupiedBandwidth;
 		}
 	}
@@ -90,6 +95,7 @@ public class Route implements Comparable<Route>{
 	 * Removes this path from network.
 	 */
 	public void removePath() {
+		// Restore edges' bandwidth.
 		for (Edge edge : edges) {
 			edge.bandwidth += occupiedBandwidth;
 		}
