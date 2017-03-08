@@ -30,6 +30,7 @@ public class Route implements Comparable<Route>{
 		this.server = server;
 		this.client = client;
 		nodes.add(server);
+		computeBandwidthAndCost();
 	}
 	
 	public Route(List<Integer> nodes) {
@@ -49,11 +50,6 @@ public class Route implements Comparable<Route>{
 	}
 	
 	public static List<Route> getShortestPaths(int start, int end) {
-		if (start > end) {
-			int tmp = end;
-			end = start;
-			start = tmp;
-		}
 		Pair<Integer, Integer> pair = new Pair<>(start, end);
 		if (shortestPaths.get(pair) == null) {
 			shortestPaths.put(pair, YenKSP.kspYen(start, end, 5));
@@ -99,6 +95,7 @@ public class Route implements Comparable<Route>{
 	 * Adds this path to network.
 	 */
 	public void addPath() {
+		removePath();
 		computeBandwidthAndCost();
 		this.occupiedBandwidth = Math.min(maxBandwidth, Graph.nodes[client].demands);
 		Graph.nodes[client].demands -= this.occupiedBandwidth;

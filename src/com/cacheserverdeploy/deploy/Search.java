@@ -274,4 +274,13 @@ public class Search {
 		}
 		return true;
 	}
+	
+	public static int computerCost() {
+		int cost = 0;
+		cost += servers.size() * Graph.serverCost;
+		for (Route route : solution) {
+			cost += route.averageCost * route.occupiedBandwidth;
+		}
+		return cost;
+	}
 }

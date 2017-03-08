@@ -50,21 +50,20 @@ public class Constructive {
 							// Shortest paths from one node to client node.
 							for (Route path : Route.getShortestPaths(node.vertexId, clientNode.vertexId)) {
 								// No need to add this path.
-								if (clientNode.demands == 0) {
+								if (clientNode.demands == 0 || path.averageCost * path.maxBandwidth >= Graph.serverCost) {
 									break;
 								}
 								
 								addedPaths.add(path);
-								curOccupiedDemands.add(path.occupiedBandwidth);
-								
 								newCost += addPath(path);
+								curOccupiedDemands.add(path.occupiedBandwidth);
 							}
 						}
 					}
 					
 					// Add penalties for unserved demands
 					for (Node clientNode : Graph.clientNodes) {
-						newCost += clientNode.demands * 10;
+						newCost += clientNode.demands * 6;
 					}
 					
 					// This node as server is better than last one.
@@ -82,7 +81,8 @@ public class Constructive {
 			for (Route path : bestPaths) {
 				addPath(path);
 			}
-
+			
+			newServer.isServer = true;
 			Search.servers.add(newServer);
 			Search.solution.addAll(bestPaths);
 		}
@@ -127,7 +127,7 @@ public class Constructive {
 		}
 		else {
 			for (int i = 0; i < paths.size(); i++) {
-				paths.get(i).restorePath(occupiedBandwidths.get(i));
+				paths.get(i).removePath();
 			}
 		}
 	}
