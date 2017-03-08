@@ -35,7 +35,7 @@ public class Search {
 		});
 	}
 	
-	/*
+	/**
 	 *  HotSpot heuristic to construct the initial solution.
 	 */
 	public static void hotSpot(ArrayList<Node> unserverdClients) {
@@ -128,7 +128,7 @@ public class Search {
 		}
 	}
 	
-	/*
+	/**
 	 * Returns routes to clients from one node, one client one route, it will lost some routes.
 	 */
 	public static ArrayList<ArrayList<Integer>> bfsToClients(Node node) {
@@ -148,8 +148,8 @@ public class Search {
 			for (int i = 0; i < size; i++) {
 				int id = queue.poll();
 				ArrayList<Integer> route = trace.poll();
-				// Wouldn't visit the node that has visited.
-				if (!mark[id]) {
+				// Wouldn't visit the node that has visited except the client node.
+				if (!mark[id] || Graph.nodes[id].clientId != -1) {
 					// Mark the node as visited
 					mark[id] = true;
 					// If the node attach to a client, save the route.
@@ -163,12 +163,93 @@ public class Search {
 							route.add(edge.target);
 							trace.add(new ArrayList<>(route));
 							route.remove(route.size() - 1);
+							continue;
+						}
+						// If next node has visited but it is client node.
+						if (Graph.nodes[edge.target].clientId != -1) {
+							route.add(edge.target);
+							routesToClients.add(new ArrayList<>(route));
+							route.remove(route.size() - 1);
 						}
 					}
 				}
 			}	
 		}
 		return routesToClients;
+	}
+	
+	/**
+	 * From one node, find all paths to all clients.
+	 * @param node
+	 * @return
+	 */
+	public static ArrayList<ArrayList<Integer>> dfsToClients(Node node) {
+		ArrayList<ArrayList<Integer>> routesToClients = new ArrayList<ArrayList<Integer>>();
+		LinkedList<Integer> visitedNodes = new LinkedList<>();
+		if (node.clientId != -1) {
+			routesToClients.add(new ArrayList<Integer>(node.vertexId));
+		}
+		visitedNodes.add(node.vertexId);
+		dfs(visitedNodes, routesToClients);
+		return routesToClients;
+	}
+	
+	/**
+	 * Finds all simple paths between two nodes.
+	 * @param nodeId
+	 * @param destId
+	 * @return
+	 */
+	public static ArrayList<ArrayList<Integer>> dfsToAnother(int nodeId, int destId) {
+		ArrayList<ArrayList<Integer>> routesToClients = new ArrayList<ArrayList<Integer>>();
+		LinkedList<Integer> visitedNodes = new LinkedList<>();
+
+		visitedNodes.add(nodeId);
+		dfsTo(visitedNodes, destId, routesToClients);
+		return routesToClients;
+	}
+	
+	public static void dfsTo(LinkedList<Integer> visited, int destId, ArrayList<ArrayList<Integer>> routesToClients) {
+		int lastNodeId = visited.getLast();
+		for (Edge edge : Graph.adj[lastNodeId]) {
+			if (visited.contains(edge.target)) {
+				continue;
+			}	
+			if (edge.target == destId) {
+				visited.add(edge.target);
+				routesToClients.add(new ArrayList<Integer>(visited));
+				visited.removeLast();
+				break;
+			}
+		}
+		
+		for (Edge edge : Graph.adj[lastNodeId]) {
+			if (visited.contains(edge.target) || edge.target == destId) {
+				continue;
+			}
+			visited.add(edge.target);
+			dfsTo(visited, destId, routesToClients);
+			visited.removeLast();
+		}
+		
+	}
+	
+	// Too slow
+	public static void dfs(LinkedList<Integer> visited, ArrayList<ArrayList<Integer>> routesToClients) {
+		int lastNodeId = visited.getLast();
+		for (Edge edge : Graph.adj[lastNodeId]) {
+			if (visited.contains(edge.target)) {
+				continue;
+			}
+			visited.add(edge.target);
+			if (Graph.nodes[edge.target].clientId != -1) {
+				routesToClients.add(new ArrayList<Integer>(visited));
+				visited.removeLast();
+				continue;
+			}
+			dfs(visited, routesToClients);
+			visited.removeLast();
+		}
 	}
 	
 	
@@ -182,7 +263,7 @@ public class Search {
 	public static boolean isFeasible(ArrayList<Route> solution) {
 		int[] demands = new int[Graph.clientVertexNum];
 		for (Route route : solution) {
-			demands[route.client] += route.occupiedBandwidth;
+			demands[Graph.nodes[route.client].clientId] += route.occupiedBandwidth;
 		}
 		System.out.println(Arrays.toString(demands));
 		System.out.println(Arrays.toString(Arrays.copyOfRange(Graph.clientDemand, 0, Graph.clientVertexNum)));

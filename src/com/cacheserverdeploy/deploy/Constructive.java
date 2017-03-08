@@ -48,7 +48,7 @@ public class Constructive {
 						if (clientNode.demands > 0) {
 							
 							// Shortest paths from one node to client node.
-							for (Route path : Route.shortestPaths.get(new Pair<>(node.vertexId, clientNode.vertexId))) {
+							for (Route path : Route.getShortestPaths(node.vertexId, clientNode.vertexId)) {
 								// No need to add this path.
 								if (clientNode.demands == 0) {
 									break;

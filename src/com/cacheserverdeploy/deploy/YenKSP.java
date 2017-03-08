@@ -88,6 +88,10 @@ public class YenKSP {
 	
 	
 	public static Route dijkstraShortestPath(int start, int end) {
+		if (start == end) {
+			return new Route(start, end);
+		}
+		
 		int[] prev = new int[Graph.vertexNum];
 		PriorityQueue<Node> candidates = new PriorityQueue<>(Collections.reverseOrder());
 		
