@@ -7,7 +7,7 @@ package com.cacheserverdeploy.deploy;
  * @author JwZhou
  *
  */
-public class Node {
+public class Node implements Comparable<Node> {
 
 	public int vertexId;
 	
@@ -16,6 +16,8 @@ public class Node {
 	public int demands = -1;
 	
 	public boolean isServer = false;
+	public int tentativeCost;
+	public boolean removed = false;
 	
 	public Node(int vertexId) {
 		this.vertexId = vertexId;
@@ -48,4 +50,8 @@ public class Node {
 		return true;
 	}
 	
+	@Override
+	public int compareTo(Node other) {
+		return other.tentativeCost - this.tentativeCost;
+	}
 }

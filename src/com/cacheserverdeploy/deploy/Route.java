@@ -36,6 +36,7 @@ public class Route implements Comparable<Route>{
 		this.server = nodes.get(0);
 		this.client = nodes.get(nodes.size() - 1);
 		this.nodes = nodes;
+		computeBandwidthAndCost();
 	}
 	
 	public List<Edge> getEdges() {
@@ -120,5 +121,30 @@ public class Route implements Comparable<Route>{
 			return this.averageCost - other.averageCost;
 		}
 		return other.maxBandwidth - this.maxBandwidth;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((nodes == null) ? 0 : nodes.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Route other = (Route) obj;
+		if (nodes == null) {
+			if (other.nodes != null)
+				return false;
+		} else if (!nodes.equals(other.nodes))
+			return false;
+		return true;
 	}
 }

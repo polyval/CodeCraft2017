@@ -20,6 +20,9 @@ public class Edge implements Comparable<Edge> {
 	public final int cost;
 	public int bandwidth;
 	
+	public boolean removed = false;
+	
+	
 	public Edge(int source, int target, int cost, int bandwidth) {
 		this.source = source;
 		this.target = target;
