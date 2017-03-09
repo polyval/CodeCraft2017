@@ -26,32 +26,19 @@ public class VNS {
 						newServers.set(k, Graph.nodes[neighborEdge.target]);
 						newServers.get(k).isServer = true;
 						
-						Route.removeAllPaths();
-						List<Route> newSolution = new ArrayList<>();
-						for (Node server : Search.servers) {
-							List<Route> allPaths = new ArrayList<>();
+						List<Route> allPaths = new ArrayList<>();
+						for (Node server : newServers) {
 							for (Node clientNode : Graph.clientNodes) {
-								// Client node that still has demands.
 								allPaths.addAll(Route.getShortestPaths(server.vertexId, clientNode.vertexId));
 							}
-							Collections.sort(allPaths);
-							int newCost = 0;
-							for (Route path : allPaths) {
-								if (Graph.nodes[path.client].demands > 0 && newCost < Graph.serverCost) {
-									newCost += Constructive.addPath(path);
-									newSolution.add(path);
-								}
-							}
 						}
-						if (Search.isFeasible(newSolution) && Search.computerCost(newSolution) < Search.cost) {
-							Search.solution = newSolution;
+//						Collections.sort(allPaths);
+						if(isBetter(allPaths)) {
 							Search.servers = newServers;
-							Search.cost = Search.computerCost(newSolution);
+							changePathsSwapFirst(allPaths);
+							break;
 						}
-						else {
-							Route.removeAllPaths();
-							Route.addPaths(Search.solution);
-						}
+					
 					}
 					else {
 						continue;
@@ -60,11 +47,53 @@ public class VNS {
 			}
 			
 		}
-		Route.removeAllPaths();
-		Route.addPaths(Search.solution);
 	}
 	
-	public static void changePaths() {
+	public static void moveServer() {
+		
+		boolean findBetter = true;
+		while (findBetter) {
+			findBetter = false;
+			for (int i = 0; i < Search.servers.size(); i++) {
+				// Choose one server to move out.
+				List<Node> newServers = new ArrayList<>(Search.servers);
+				for (Node node : Graph.nodes) {
+					if (Search.servers.contains(node)) {
+						continue;
+					}
+					newServers.set(i, node);
+					List<Route> newSolution = getBestSolutionGivenServers(newServers);
+					if (newSolution != null) {
+						findBetter = true;
+						Search.servers = newServers;
+						Search.solution = newSolution;
+						Search.cost = Search.computerCost(newSolution);
+						break;
+					}
+				}
+			}
+			if (!findBetter) {
+				break;
+			}
+		}
+		
+	}
+	
+	public static List<Route> getBestSolutionGivenServers(List<Node> servers) {
+		List<Route> newSolution = new ArrayList<>();
+		for (Node server : servers) {
+			for (Node clientNode : Graph.clientNodes) {
+				newSolution.addAll(Route.getShortestPaths(server.vertexId, clientNode.vertexId));
+			}
+		}
+		Collections.sort(newSolution);
+		if (isBetter(newSolution)) {
+			return newSolution;
+		}
+		return null;
+	}
+	
+	public static void changePathsRandom() {
 		for (int i = 0; i < 500; i++) {
 			List<Route> newSolution = new ArrayList<>(Search.solution);
 			Collections.shuffle(newSolution);
@@ -81,5 +110,77 @@ public class VNS {
 				Route.addPaths(Search.solution);
 			}
 		}
+	}
+	
+	public static void changePathsSwapFirst(List<Route> solution) {
+		List<Route> newSolution = new ArrayList<>(solution);
+		
+		boolean findBetter = true;
+		while (findBetter) {
+			findBetter = false;
+			for(int i = 0; i < newSolution.size() - 1; i++) {
+				for (int j = 0; j < newSolution.size(); j++) {
+					Collections.swap(newSolution, i, j);
+					if (isBetter(newSolution)) {
+						Search.solution = newSolution;
+						Search.cost = Search.computerCost(newSolution);
+						findBetter = true;
+						break;
+					}
+					Collections.swap(newSolution, i, j);
+				}
+				if (findBetter) {
+					break;
+				}
+			}
+			
+			if (!findBetter) {
+				break;
+			}
+		}
+	}
+	
+	public static void changePathsSwapBest() {
+		List<Route> newSolution = new ArrayList<>(Search.solution);
+		
+		
+		boolean findBetter = true;
+		
+		while (findBetter) {
+			findBetter = false;
+			
+			int cost = Search.cost;
+			int[] bestSwap = new int[2];
+			
+			for(int i = 0; i < newSolution.size() - 1; i++) {
+				for (int j = 0; j < newSolution.size(); j++) {
+					Collections.swap(newSolution, i, j);
+					if (isBetter(newSolution)) {
+						findBetter = true;
+						if (Search.cost < cost) {
+							bestSwap[0] = i;
+							bestSwap[1] = j;
+						}
+					}
+					Collections.swap(newSolution, i, j);
+				}
+			}
+			
+			if (!findBetter) {
+				break;
+			}
+			Collections.swap(newSolution, bestSwap[0], bestSwap[1]);
+		}
+	}
+	
+	public static boolean isBetter(List<Route> newSolution) {
+		Route.removeAllPaths();
+		Route.addPaths(newSolution);
+		if (Search.isFeasible(newSolution) && Search.computerCost(newSolution) < Search.cost) {
+			return true;
+		}
+		Route.removeAllPaths();
+		Route.addPaths(Search.solution);
+		return false;
 	}
 }
