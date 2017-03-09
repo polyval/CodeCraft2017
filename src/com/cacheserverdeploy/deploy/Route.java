@@ -115,10 +115,23 @@ public class Route implements Comparable<Route>{
 		computeBandwidthAndCost();
 	}
 	
+	public static void addPaths(List<Route> paths) {
+		for (Route path : paths) {
+			path.addPath();
+		}
+	}
+	
+	public static void removeAllPaths() {
+		for (List<Route> paths : shortestPaths.values()) {
+			for (Route path : paths) {
+				path.removePath();
+			}
+		}
+	}
+	
 	public int getClientRemaningDemands() {
 		return Graph.nodes[client].demands;
 	}
-	
 	
 	@Override
 	public String toString() {

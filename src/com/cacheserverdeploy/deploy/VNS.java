@@ -50,9 +50,7 @@ public class VNS {
 						}
 						else {
 							Route.removeAllPaths();
-							for (Route path : Search.solution) {
-								path.addPath();
-							}
+							Route.addPaths(Search.solution);
 						}
 					}
 					else {
@@ -63,9 +61,7 @@ public class VNS {
 			
 		}
 		Route.removeAllPaths();
-		for (Route path : Search.solution) {
-			path.addPath();
-		}
+		Route.addPaths(Search.solution);
 	}
 	
 	public static void changePaths() {
@@ -82,9 +78,7 @@ public class VNS {
 			}
 			else {
 				Route.removeAllPaths();
-				for (Route path : Search.solution) {
-					path.addPath();
-				}
+				Route.addPaths(Search.solution);
 			}
 		}
 	}
