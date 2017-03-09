@@ -79,6 +79,47 @@ public class VNS {
 		
 	}
 	
+	public static void moveServerVNS() {
+		// Number of servers to change.
+		int k = 1;
+		boolean findBetter = true;
+		while (findBetter && k <= Search.servers.size()) {
+			findBetter = false;
+			// Collections of indices of server to move out.
+			List<ArrayList<Integer>> neighborhood = Util.combine(Search.servers.size(), k);
+			// Collections of indices of nodes to move in.
+			List<ArrayList<Integer>> moveInNodes = Util.getNodesCombinations(Search.servers, k);
+			for (ArrayList<Integer> neighbor : neighborhood) {
+					
+					for (List<Integer> moveInNodesId : moveInNodes) {
+						List<Node> newServers = new ArrayList<>(Search.servers);
+						// Get new servers
+						for (int i = 0; i < k; i++) {
+							newServers.set(neighbor.get(i), Graph.nodes[moveInNodesId.get(i)]);
+						}
+						
+						List<Route> newSolution = getBestSolutionGivenServers(newServers);
+						if (newSolution != null) {
+							findBetter = true;
+							Search.servers = newServers;
+							Search.solution = newSolution;
+							Search.cost = Search.computerCost(newSolution);
+							break;
+						}
+					}
+					
+					if (findBetter) {
+						break;
+					}
+			}
+			if (!findBetter) {
+				findBetter = true;
+				k++;
+			}
+		}
+		
+	}
+	
 	public static List<Route> getBestSolutionGivenServers(List<Node> servers) {
 		List<Route> newSolution = new ArrayList<>();
 		for (Node server : servers) {
