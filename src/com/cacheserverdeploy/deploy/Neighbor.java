@@ -6,6 +6,7 @@ package com.cacheserverdeploy.deploy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * @author JwZhou
@@ -65,34 +66,36 @@ public class Neighbor {
 	public static void reallocate(ArrayList<Route> paths, ArrayList<Integer> pathsId) {
 		int cost = 0;
 		int totalBandwidth = 0;
-		// New bandwidths that allocate to the path.
-		Integer[] occupiedBandwidths = new Integer[pathsId.size()];
 		
+		// Cost by current paths.
 		for (int i = 0; i < pathsId.size(); i++) {
 			Route path = paths.get(pathsId.get(i));
 			cost += path.averageCost * path.occupiedBandwidth;
-			occupiedBandwidths[i] = path.occupiedBandwidth;
 			totalBandwidth += path.occupiedBandwidth;
 			
 			path.removePath();
 		}
 		
+		// New cost after reallocating.
 		int newCost = 0;
 		int newTotalBandwidth = 0;
+		// Paths that are reallocated
+		List<Route> changedPaths = new ArrayList<>();
 		for (int i = 0; i < pathsId.size(); i++) {
 			Route path = paths.get(pathsId.get(i));
 			Constructive.addPath(path);
+			changedPaths.add(path);
 			newCost += path.averageCost * path.occupiedBandwidth;
 			newTotalBandwidth += path.occupiedBandwidth;
 		}
 		
-		if( newCost + (totalBandwidth - newTotalBandwidth) * 10 - cost <  0) {
+		if( newCost + (totalBandwidth - newTotalBandwidth) * 8 - cost <  0 || !Search.isFeasible(paths)) {
 			// Paths have already been updated.
 			return;
 		}
 		else {
 			// Restore paths.
-			Constructive.restorePaths(paths, Arrays.asList(occupiedBandwidths));
+			Constructive.restorePaths(changedPaths);
 		}
 	}
 	
