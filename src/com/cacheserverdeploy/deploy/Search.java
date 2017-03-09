@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 
 /**
@@ -16,9 +17,10 @@ import java.util.Queue;
  */
 public class Search {
 	
-	public static ArrayList<Node> servers = new ArrayList<>();
+	public static List<Node> servers = new ArrayList<>();
 	public static ArrayList<Node> clientNodes = new ArrayList<>(Graph.clientVertexNum);
-	public static ArrayList<Route> solution = new ArrayList<>();
+	public static List<Route> solution = new ArrayList<>();
+	public static int cost = 0;
 	
 	public static void initialize() {
 		// Get all the client nodes.
@@ -257,10 +259,9 @@ public class Search {
 	 * Resets the data.
 	 */
 	public void reset() {
-		
 	}
 	
-	public static boolean isFeasible(ArrayList<Route> solution) {
+	public static boolean isFeasible(List<Route> solution) {
 		int[] demands = new int[Graph.clientVertexNum];
 		for (Route route : solution) {
 			demands[Graph.nodes[route.client].clientId] += route.occupiedBandwidth;
@@ -275,7 +276,7 @@ public class Search {
 		return true;
 	}
 	
-	public static int computerCost() {
+	public static int computerCost(List<Route> solution) {
 		int cost = 0;
 		cost += servers.size() * Graph.serverCost;
 		for (Route route : solution) {

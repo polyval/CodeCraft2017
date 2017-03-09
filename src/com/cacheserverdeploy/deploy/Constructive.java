@@ -6,6 +6,7 @@ package com.cacheserverdeploy.deploy;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -39,31 +40,44 @@ public class Constructive {
 					int newCost = 0;
 					
 					// For restoring the paths.
-					ArrayList<Integer> curOccupiedDemands = new ArrayList<>();
 					ArrayList<Route> addedPaths = new ArrayList<>();
 					
-					// Start with client needing most demands
+					//Start with client needing most demands
+//					for (Node clientNode : Graph.clientNodes) {
+//						// Client node that still has demands.
+//						if (clientNode.demands > 0) {
+//							
+//							// Shortest paths from one node to client node.
+//							for (Route path : Route.getShortestPaths(node.vertexId, clientNode.vertexId)) {
+//								// No need to add this path.
+//								if (clientNode.demands == 0 || path.averageCost * path.maxBandwidth >= Graph.serverCost) {
+//									break;
+//								}
+//								
+//								addedPaths.add(path);
+//								newCost += addPath(path);
+//							}
+//						}
+//					}
+//					
+//					// Start with path that costs less.
+					List<Route> allPaths = new ArrayList<>();
 					for (Node clientNode : Graph.clientNodes) {
 						// Client node that still has demands.
-						if (clientNode.demands > 0) {
-							
-							// Shortest paths from one node to client node.
-							for (Route path : Route.getShortestPaths(node.vertexId, clientNode.vertexId)) {
-								// No need to add this path.
-								if (clientNode.demands == 0 || path.averageCost * path.maxBandwidth >= Graph.serverCost) {
-									break;
-								}
-								
-								addedPaths.add(path);
-								newCost += addPath(path);
-								curOccupiedDemands.add(path.occupiedBandwidth);
-							}
+						allPaths.addAll(Route.getShortestPaths(node.vertexId, clientNode.vertexId));
+					}
+					Collections.sort(allPaths);
+					for (Route path : allPaths) {
+						if (Graph.nodes[path.client].demands > 0 && newCost < Graph.serverCost) {
+							addedPaths.add(path);
+							newCost += addPath(path);
 						}
 					}
 					
+					
 					// Add penalties for unserved demands
 					for (Node clientNode : Graph.clientNodes) {
-						newCost += clientNode.demands * 6;
+						newCost += clientNode.demands * 8;
 					}
 					
 					// This node as server is better than last one.
@@ -74,7 +88,7 @@ public class Constructive {
 						bestPaths = addedPaths;
 					}
 					
-					restorePaths(addedPaths, curOccupiedDemands);
+					restorePaths(addedPaths);
 				}
 			}
 			// Update the solution
@@ -85,6 +99,89 @@ public class Constructive {
 			newServer.isServer = true;
 			Search.servers.add(newServer);
 			Search.solution.addAll(bestPaths);
+			Search.cost = Search.computerCost(Search.solution);
+		}
+		
+	}
+	
+	
+public static void greedyConstructByBandwidth() {
+		
+		Arrays.sort(Graph.clientNodes, new Comparator<Node>() {
+			@Override
+			public int compare(Node n1, Node n2) {
+				// It may has some other criteria.
+				return n2.demands - n1.demands;
+			}
+		});
+		
+		while (isUnsatisfiedDemands() && Search.servers.size() < Graph.clientVertexNum - 1) {
+			int lowerBound = 0;
+			Node newServer = null;
+			ArrayList<Route> bestPaths = new ArrayList<>();
+			
+			for (Node node : Graph.nodes) {
+				if (!node.isServer) {
+					// Cost induced by setting this node as server.
+					int newCost = 0;
+					int totalBandwidth = 0;
+					
+					// For restoring the paths.
+					ArrayList<Route> addedPaths = new ArrayList<>();
+					
+					// Start with client needing most demands
+//					for (Node clientNode : Graph.clientNodes) {
+//						// Client node that still has demands.
+//						if (clientNode.demands > 0) {
+//							
+//							// Shortest paths from one node to client node.
+//							for (Route path : Route.getShortestPaths(node.vertexId, clientNode.vertexId)) {
+//								// No need to add this path.
+//								if (clientNode.demands == 0 || path.averageCost * path.maxBandwidth >= Graph.serverCost) {
+//									break;
+//								}
+//								
+//								addedPaths.add(path);
+//								newCost += addPath(path);
+//							}
+//						}
+//					}
+//					
+					// Start with path that costs less.
+					List<Route> allPaths = new ArrayList<>();
+					for (Node clientNode : Graph.clientNodes) {
+						// Client node that still has demands.
+						allPaths.addAll(Route.getShortestPaths(node.vertexId, clientNode.vertexId));
+					}
+					Collections.sort(allPaths);
+					for (Route path : allPaths) {
+						if (Graph.nodes[path.client].demands > 0 && newCost < Graph.serverCost) {
+							addedPaths.add(path);
+							newCost += addPath(path);
+							totalBandwidth += path.occupiedBandwidth;
+						}
+					}
+					
+					// This node as server is better than last one.
+					if (totalBandwidth > lowerBound) {
+						// Update the best server solution.
+						newServer = node;
+						lowerBound = totalBandwidth;
+						bestPaths = addedPaths;
+					}
+					
+					restorePaths(addedPaths);
+				}
+			}
+			// Update the solution
+			for (Route path : bestPaths) {
+				addPath(path);
+			}
+			
+			newServer.isServer = true;
+			Search.servers.add(newServer);
+			Search.solution.addAll(bestPaths);
+			Search.cost = Search.computerCost(Search.solution);
 		}
 		
 	}
@@ -118,17 +215,12 @@ public class Constructive {
 	
 	/**
 	 * Restores all the paths.
-	 * @param paths
+	 * @param changedPaths
 	 * @param occupiedBandwidths
 	 */
-	public static void restorePaths(ArrayList<Route> paths, List<Integer> occupiedBandwidths) {
-		if (paths.size() != occupiedBandwidths.size()) {
-			throw new InvalidParameterException();
-		}
-		else {
-			for (int i = 0; i < paths.size(); i++) {
-				paths.get(i).removePath();
+	public static void restorePaths(List<Route> changedPaths) {
+			for (int i = 0; i < changedPaths.size(); i++) {
+				changedPaths.get(i).removePath();
 			}
-		}
 	}
 }
