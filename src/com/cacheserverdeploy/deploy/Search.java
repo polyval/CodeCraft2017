@@ -20,7 +20,7 @@ public class Search {
 	public static List<Node> servers = new ArrayList<>();
 	public static ArrayList<Node> clientNodes = new ArrayList<>(Graph.clientVertexNum);
 	public static List<Route> solution = new ArrayList<>();
-	public static int cost = 0;
+	public static int cost = Graph.clientVertexNum * Graph.serverCost;
 	
 	public static void initialize() {
 		// Get all the client nodes.
@@ -72,7 +72,7 @@ public class Search {
 				servers.add(Graph.nodes[serverNodeId]);
 				
 				// Add one route to solution.
-				Route route = new Route(serverNodeId, firstClient.clientId);
+				Route route = new Route(serverNodeId, firstClient.vertexId);
 				route.nodes.add(firstClient.vertexId);
 				route.computeBandwidthAndCost();
 				route.occupiedBandwidth = Math.min(firstClient.demands, route.maxBandwidth);
@@ -94,7 +94,7 @@ public class Search {
 			servers.add(firstClient);
 			
 			// Add one route to solution.
-			Route route = new Route(firstClient.vertexId, firstClient.clientId);
+			Route route = new Route(firstClient.vertexId, firstClient.vertexId);
 			route.occupiedBandwidth = Math.min(firstClient.demands, route.maxBandwidth);
 			firstClient.demands -= route.occupiedBandwidth;
 			solution.add(route);
@@ -266,8 +266,6 @@ public class Search {
 		for (Route route : solution) {
 			demands[Graph.nodes[route.client].clientId] += route.occupiedBandwidth;
 		}
-		System.out.println(Arrays.toString(demands));
-		System.out.println(Arrays.toString(Arrays.copyOfRange(Graph.clientDemand, 0, Graph.clientVertexNum)));
 		for (int i = 0; i < Graph.clientVertexNum; i++) {
 			if (demands[i] != Graph.clientDemand[i]) {
 				return false;
@@ -283,5 +281,33 @@ public class Search {
 			cost += route.averageCost * route.occupiedBandwidth;
 		}
 		return cost;
+	}
+	
+	public static boolean deepCheck(List<Route> solution) {
+		int[][] edgesBandwidth = new int[Graph.vertexNum][Graph.vertexNum];
+		int[] demands = new int[Graph.clientVertexNum];
+		for (Route path : solution) {
+			demands[Graph.nodes[path.client].clientId] += path.occupiedBandwidth;
+			for (int i = 0; i < path.nodes.size() - 1; i++) {
+				edgesBandwidth[path.nodes.get(i)][path.nodes.get(i+1)] += path.occupiedBandwidth;
+			}
+		}
+		
+		for (int i = 0; i < Graph.clientVertexNum; i++) {
+			if (demands[i] != Graph.clientDemand[i]) {
+				return false;
+			}
+		}
+		
+		for (int i = 0; i < Graph.vertexNum; i++) {
+			for (int j = 0; j < Graph.vertexNum; j++) {
+				if (edgesBandwidth[i][j] > Graph.edgeBandwidth[i][j]) {
+					return false;
+				}
+			}
+		}
+		
+		return true;
+		
 	}
 }

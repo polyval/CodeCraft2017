@@ -15,9 +15,9 @@ import java.util.PriorityQueue;
  *
  */
 public class YenKSP {
+	private static int k = 5;
 	
-	
-	public static List<Route> kspYen(int start, int end, int k) {
+	public static List<Route> kspYen(int start, int end) {
 		List<Route> shortestPaths = new ArrayList<>();
 		PriorityQueue<Route> candidatePaths = new PriorityQueue<>();
 		

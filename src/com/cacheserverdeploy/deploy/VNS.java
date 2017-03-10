@@ -5,7 +5,14 @@ package com.cacheserverdeploy.deploy;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.accessibility.AccessibleRelation;
 
 /**
  * @author JwZhou
@@ -79,6 +86,74 @@ public class VNS {
 		
 	}
 	
+	public static void dropServer() {
+		Map<Integer, List<Route>> serverPaths = new HashMap<>();
+		Map<Integer, Set<Integer>> droppedClients = new HashMap<>(); 
+		for (Route path : Search.solution) {
+			if (!serverPaths.containsKey(path.server)) {
+				List<Route> route = new ArrayList<>();
+				Set<Integer> clients = new HashSet<>();
+				route.add(path);
+				clients.add(path.client);
+ 				serverPaths.put(path.server, route);
+ 				droppedClients.put(path.server, clients);
+ 				
+			}
+			else {
+				serverPaths.get(path.server).add(path);
+				droppedClients.get(path.server).add(path.client);
+			}
+		}
+		
+		for (int i = 0; i < Search.servers.size(); i++) {
+			// Drop a server.
+			int serverId = Search.servers.get(i).vertexId;
+			Constructive.restorePaths(serverPaths.get(serverId));
+			List<Route> newSolution = new ArrayList<>(Search.solution);
+			newSolution.removeAll(serverPaths.get(serverId));
+			
+			Iterator<Integer> lostClients = droppedClients.get(serverId).iterator();
+			
+			while (lostClients.hasNext()) {
+				// Get paths from remaining servers to one lost client.
+				int clientId = lostClients.next();
+				List<Route> pathsToClients = new ArrayList<>();
+				for (int k = 0; k < Search.servers.size(); k++) {
+					// Can not be dropped server.
+					if (k == i) {
+						continue;
+					}
+					pathsToClients.addAll(Route.getShortestPaths(Search.servers.get(k).vertexId, clientId));
+				}
+				Collections.sort(pathsToClients);
+				for (Route path : pathsToClients) {
+					if (path.maxBandwidth == 0 || path.maxBandwidth * path.averageCost > Graph.serverCost) {
+						continue;
+					}
+					if (Graph.nodes[clientId].demands == 0) {
+						break;
+					}
+					newSolution.add(path);
+				}
+			}
+			
+			if (Search.isFeasible(newSolution) && Search.computerCost(newSolution) < Search.cost) {
+				Search.solution = newSolution;
+				Search.cost = Search.computerCost(newSolution);
+				Search.servers.remove(i);
+				break;
+			}
+			else {
+				Route.removeAllPaths();
+				Route.addPaths(Search.solution);
+			}
+		}
+	}
+	
+	public static void addServerAndPaths() {
+		
+	}
+	
 	public static void moveServerVNS() {
 		// Number of servers to change.
 		int k = 1;
@@ -134,6 +209,28 @@ public class VNS {
 		return null;
 	}
 	
+	// Not better than getBestSolutionGivenServers by cost.
+	public static List<Route> getBestSolutionGivenServersStartFromClients(List<Node> servers) {
+		List<Route> newSolution = new ArrayList<>();
+		Route.removeAllPaths();
+		for (Node clientNode : Graph.clientNodes) {
+			for (Node server : servers) {
+				for (Route path : Route.getShortestPaths(server.vertexId, clientNode.vertexId)) {
+					// No need to add this path.
+					if (clientNode.demands == 0 || path.averageCost * path.maxBandwidth >= Graph.serverCost) {
+						break;
+					}
+					path.addPath();
+					newSolution.add(path);
+				}
+			}
+		}
+		if (isBetter(newSolution)) {
+			return newSolution;
+		}
+		return null;
+	}
+	
 	public static void changePathsRandom() {
 		for (int i = 0; i < 500; i++) {
 			List<Route> newSolution = new ArrayList<>(Search.solution);
@@ -181,8 +278,8 @@ public class VNS {
 		}
 	}
 	
-	public static void changePathsSwapBest() {
-		List<Route> newSolution = new ArrayList<>(Search.solution);
+	public static void changePathsSwapBest(List<Route> solution) {
+		List<Route> newSolution = new ArrayList<>(solution);
 		
 		
 		boolean findBetter = true;
@@ -198,7 +295,7 @@ public class VNS {
 					Collections.swap(newSolution, i, j);
 					if (isBetter(newSolution)) {
 						findBetter = true;
-						if (Search.cost < cost) {
+						if (Search.computerCost(newSolution) < cost) {
 							bestSwap[0] = i;
 							bestSwap[1] = j;
 						}
@@ -211,6 +308,8 @@ public class VNS {
 				break;
 			}
 			Collections.swap(newSolution, bestSwap[0], bestSwap[1]);
+			Search.solution = newSolution;
+			Search.cost = Search.computerCost(newSolution);
 		}
 	}
 	

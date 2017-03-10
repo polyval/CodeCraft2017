@@ -52,7 +52,7 @@ public class Route implements Comparable<Route>{
 	public static List<Route> getShortestPaths(int start, int end) {
 		Pair<Integer, Integer> pair = new Pair<>(start, end);
 		if (shortestPaths.get(pair) == null) {
-			shortestPaths.put(pair, YenKSP.kspYen(start, end, 5));
+			shortestPaths.put(pair, YenKSP.kspYen(start, end));
 		}
 		return shortestPaths.get(pair);
 	}
@@ -117,7 +117,9 @@ public class Route implements Comparable<Route>{
 	
 	public static void addPaths(List<Route> paths) {
 		for (Route path : paths) {
-			path.addPath();
+			if (Constructive.isUnsatisfiedDemands()) {
+				path.addPath();
+			}
 		}
 	}
 	
@@ -135,7 +137,12 @@ public class Route implements Comparable<Route>{
 	
 	@Override
 	public String toString() {
-		return nodes.toString() + " " + occupiedBandwidth + " " + client;
+		StringBuilder s = new StringBuilder();
+		for (int nodeId : nodes) {
+			s.append(nodeId);
+			s.append(" ");
+		}
+		return s.toString() + occupiedBandwidth + " " + Graph.nodes[client].vertexId;
 	}
 
 	@Override

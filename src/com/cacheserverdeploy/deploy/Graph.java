@@ -22,6 +22,7 @@ public class Graph {
 	public static int serverCost = 0;
 	public static int[] clientVertexId;
 	public static int[] clientDemand;
+	// Do not use index to get node from here.
 	public static Node[] clientNodes;
 	// Adjacency lists;
 	public static ArrayList<Edge>[] adj;
