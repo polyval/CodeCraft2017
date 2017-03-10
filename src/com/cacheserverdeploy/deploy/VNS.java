@@ -323,4 +323,16 @@ public class VNS {
 		Route.addPaths(Search.solution);
 		return false;
 	}
+	
+	public static boolean isCandidate(List<Route> newSolution) {
+		Route.removeAllPaths();
+		Route.addPaths(newSolution);
+		
+		if (Search.isFeasible(newSolution)) {
+			return true;
+		}
+		Route.removeAllPaths();
+		Route.addPaths(Search.solution);
+		return false;
+	}
 }
