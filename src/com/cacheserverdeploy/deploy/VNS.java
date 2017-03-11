@@ -32,7 +32,7 @@ public class VNS {
 				// Choose one server to move out.
 				List<Node> newServers = new ArrayList<Node>(Search.servers);
 				for (Node node : Graph.nodes) {
-					if (System.nanoTime() - Search.startTime / 1000000 > 89000) {
+					if ((System.nanoTime() - Search.startTime) / 1000000 > 89000) {
 						return;
 					}
 					if (Search.servers.contains(node)) {
@@ -78,7 +78,7 @@ public class VNS {
 			for (ArrayList<Integer> neighbor : neighborhood) {
 				
 				for (List<Integer> moveInNodesId : moveInNodes) {
-					if (System.nanoTime() - Search.startTime / 1000000 > 89000) {
+					if ((System.nanoTime() - Search.startTime) / 1000000 > 89000) {
 						return;
 					}
 					List<Node> newServers = new ArrayList<Node>(Search.servers);
@@ -123,7 +123,7 @@ public class VNS {
 			for (ArrayList<Integer> neighbor : neighborhood) {
 				
 				for (List<Integer> moveInNodesId : moveInNodes) {
-					if (System.nanoTime() - Search.startTime / 1000000 > 89000) {
+					if ((System.nanoTime() - Search.startTime) / 1000000 > 89000) {
 						return;
 					}
 					List<Node> newServers = new ArrayList<Node>(Search.servers);
@@ -254,7 +254,7 @@ public class VNS {
 		// Number of servers to change.
 		int k = 1;
 		boolean findBetter = true;
-		while (findBetter && k <= 3) {
+		while (findBetter && k <= Search.servers.size()) {
 			findBetter = false;
 			// Collections of indices of server to move out.
 			List<ArrayList<Integer>> neighborhood = Util.combine(Search.servers.size(), k);
@@ -263,6 +263,10 @@ public class VNS {
 			for (ArrayList<Integer> neighbor : neighborhood) {
 					
 					for (List<Integer> moveInNodesId : moveInNodes) {
+						System.out.println((System.nanoTime() - Search.startTime) / 1000000);
+						if ((System.nanoTime() - Search.startTime) / 1000000 > 89000) {
+							return;
+						}
 						List<Node> newServers = new ArrayList<Node>(Search.servers);
 						// Get new servers
 						for (int i = 0; i < k; i++) {

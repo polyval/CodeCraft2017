@@ -153,7 +153,7 @@ public class Search {
 		Graph.makeGraph(graphContent);
 		Constructive.greedyConstruct();
 		VNS.changePathsSwapFirst(Search.solution);
-		VNS.moveServer();
+		VNS.moveServerVNS();
 		
 		refreshSolution();
 		
