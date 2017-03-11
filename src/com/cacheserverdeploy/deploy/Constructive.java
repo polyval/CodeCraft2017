@@ -103,6 +103,7 @@ public class Constructive {
 		if (Search.isFeasible(Search.solution)) {
 			Search.isFeasible = true;
 		}
+		Search.updateSolution(Search.solution);
 	}
 	
 	public static List<Route> greedyConstructMultipleTimes() {

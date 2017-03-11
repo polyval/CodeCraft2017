@@ -159,7 +159,7 @@ public class Search {
 		
 		List<String> res = new ArrayList<String>();
 		
-		if (!isFeasible || cost > Graph.serverCost * Graph.clientVertexNum) {
+		if (!deepCheck(solution) || cost > Graph.serverCost * Graph.clientVertexNum) {
 			String[] resString = new String[Graph.clientVertexNum + 2];
 			resString[0] = String.valueOf(Graph.clientVertexNum);
 			resString[1] = "";
