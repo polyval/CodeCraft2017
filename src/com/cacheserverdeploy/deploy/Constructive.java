@@ -31,7 +31,7 @@ public class Constructive {
 		while (isUnsatisfiedDemands() && Search.servers.size() < Graph.clientVertexNum - 1) {
 			int lowerBound = Integer.MAX_VALUE;
 			Node newServer = null;
-			ArrayList<Route> bestPaths = new ArrayList<>();
+			ArrayList<Route> bestPaths = new ArrayList<Route>();
 			
 			for (Node node : Graph.nodes) {
 				if (!node.isServer) {
@@ -39,7 +39,7 @@ public class Constructive {
 					int newCost = 0;
 					
 					// For restoring the paths.
-					ArrayList<Route> addedPaths = new ArrayList<>();
+					ArrayList<Route> addedPaths = new ArrayList<Route>();
 					
 					//Start with client needing most demands
 					for (Node clientNode : Graph.clientNodes) {
@@ -107,8 +107,8 @@ public class Constructive {
 	
 	public static List<Route> greedyConstructMultipleTimes() {
 	
-		List<Route> newSolution = new ArrayList<>();
-		List<Node> newServers = new ArrayList<>();
+		List<Route> newSolution = new ArrayList<Route>();
+		List<Node> newServers = new ArrayList<Node>();
 		
 		Search.reset();
 		
@@ -123,7 +123,7 @@ public class Constructive {
 		while (isUnsatisfiedDemands() && newServers.size() < Graph.clientVertexNum) {
 			int lowerBound = Integer.MAX_VALUE;
 			Node newServer = null;
-			ArrayList<Route> bestPaths = new ArrayList<>();
+			ArrayList<Route> bestPaths = new ArrayList<Route>();
 			
 			for (Node node : Graph.nodes) {
 				if (!node.isServer) {
@@ -131,7 +131,7 @@ public class Constructive {
 					int newCost = 0;
 					
 					// For restoring the paths.
-					ArrayList<Route> addedPaths = new ArrayList<>();
+					ArrayList<Route> addedPaths = new ArrayList<Route>();
 					
 //					Start with client needing most demands
 					for (Node clientNode : Graph.clientNodes) {
@@ -207,7 +207,7 @@ public class Constructive {
 		while (isUnsatisfiedDemands() && Search.servers.size() < Graph.clientVertexNum - 1) {
 			int lowerBound = 0;
 			Node newServer = null;
-			ArrayList<Route> bestPaths = new ArrayList<>();
+			ArrayList<Route> bestPaths = new ArrayList<Route>();
 			
 			for (Node node : Graph.nodes) {
 				if (!node.isServer) {
@@ -216,7 +216,7 @@ public class Constructive {
 					int totalBandwidth = 0;
 					
 					// For restoring the paths.
-					ArrayList<Route> addedPaths = new ArrayList<>();
+					ArrayList<Route> addedPaths = new ArrayList<Route>();
 					
 					// Start with client needing most demands
 //					for (Node clientNode : Graph.clientNodes) {
@@ -237,7 +237,7 @@ public class Constructive {
 //					}
 //					
 					// Start with path that costs less.
-					List<Route> allPaths = new ArrayList<>();
+					List<Route> allPaths = new ArrayList<Route>();
 					for (Node clientNode : Graph.clientNodes) {
 						// Client node that still has demands.
 						allPaths.addAll(Route.getShortestPaths(node.vertexId, clientNode.vertexId));

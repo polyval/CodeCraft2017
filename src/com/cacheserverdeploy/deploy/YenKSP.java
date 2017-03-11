@@ -18,8 +18,8 @@ public class YenKSP {
 	private static int k = 5;
 	
 	public static List<Route> kspYen(int start, int end) {
-		List<Route> shortestPaths = new ArrayList<>();
-		PriorityQueue<Route> candidatePaths = new PriorityQueue<>();
+		List<Route> shortestPaths = new ArrayList<Route>();
+		PriorityQueue<Route> candidatePaths = new PriorityQueue<Route>();
 		
 		Route shortest = dijkstraShortestPath(start, end);
 		if (shortest == null || shortest.averageCost > Graph.serverCost) {
@@ -33,7 +33,7 @@ public class YenKSP {
 				int spurNode = path.get(j);
 				List<Integer> rootPath = path.subList(0, j + 1);
 				
-				List<Pair<Integer, Integer>> edgesRemoved = new ArrayList<>();
+				List<Pair<Integer, Integer>> edgesRemoved = new ArrayList<Pair<Integer, Integer>>();
 				for (Route originPath : shortestPaths) {
 					if (originPath.nodes.size() > j && Collections.indexOfSubList(originPath.nodes, rootPath) == 0) {
 						// Remove edges.
@@ -59,7 +59,7 @@ public class YenKSP {
 				Route spurPath = dijkstraShortestPath(spurNode, end);
 				
 				if (spurPath != null) {
-					List<Integer> totalPath = new ArrayList<>(rootPath.subList(0, j));
+					List<Integer> totalPath = new ArrayList<Integer>(rootPath.subList(0, j));
 					totalPath.addAll(spurPath.nodes);
 					Route newRoute = new Route(totalPath);
 					if (!candidatePaths.contains(newRoute)) {
@@ -93,7 +93,7 @@ public class YenKSP {
 		}
 		
 		int[] prev = new int[Graph.vertexNum];
-		PriorityQueue<Node> candidates = new PriorityQueue<>(Collections.reverseOrder());
+		PriorityQueue<Node> candidates = new PriorityQueue<Node>(10, Collections.reverseOrder());
 		
 		for (Node node : Graph.nodes) {
 			if (node.vertexId == start) {
@@ -123,7 +123,7 @@ public class YenKSP {
 			}
 		}
 		
-		ArrayList<Integer> path = new ArrayList<>();
+		ArrayList<Integer> path = new ArrayList<Integer>();
 		int cur = end;
 		while (true) {
 			path.add(cur);

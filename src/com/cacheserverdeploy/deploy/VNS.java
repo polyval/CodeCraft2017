@@ -14,47 +14,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.filetool.util.LogUtil;
+
 /**
  * @author JwZhou
  *
  */
 public class VNS {
 	
-	
-	public static void changeServerOrder() {
-		
-		for (int i = 0; i < 15; i++) {
-			
-			List<Node> newServers = new ArrayList<>(Search.servers);
-			for (int k = 0; k < Search.servers.size(); k++) {
-				for (Edge neighborEdge : Graph.adj[Search.servers.get(k).vertexId]) {
-					if (!Graph.nodes[neighborEdge.target].isServer) {
-						// Get new servers.
-						newServers.set(k, Graph.nodes[neighborEdge.target]);
-						newServers.get(k).isServer = true;
-						
-						List<Route> allPaths = new ArrayList<>();
-						for (Node server : newServers) {
-							for (Node clientNode : Graph.clientNodes) {
-								allPaths.addAll(Route.getShortestPaths(server.vertexId, clientNode.vertexId));
-							}
-						}
-//						Collections.sort(allPaths);
-						if(isBetter(allPaths)) {
-							Search.servers = newServers;
-							changePathsSwapFirst(allPaths);
-							break;
-						}
-					
-					}
-					else {
-						continue;
-					}
-				}
-			}
-			
-		}
-	}
 	
 	public static void moveServer() {
 		
@@ -63,8 +30,11 @@ public class VNS {
 			findBetter = false;
 			for (int i = 0; i < Search.servers.size(); i++) {
 				// Choose one server to move out.
-				List<Node> newServers = new ArrayList<>(Search.servers);
+				List<Node> newServers = new ArrayList<Node>(Search.servers);
 				for (Node node : Graph.nodes) {
+					if (System.nanoTime() - Search.startTime / 1000000 > 89000) {
+						return;
+					}
 					if (Search.servers.contains(node)) {
 						continue;
 					}
@@ -108,7 +78,10 @@ public class VNS {
 			for (ArrayList<Integer> neighbor : neighborhood) {
 				
 				for (List<Integer> moveInNodesId : moveInNodes) {
-					List<Node> newServers = new ArrayList<>(Search.servers);
+					if (System.nanoTime() - Search.startTime / 1000000 > 89000) {
+						return;
+					}
+					List<Node> newServers = new ArrayList<Node>(Search.servers);
 					// Get new servers
 					for (int i = 0; i < 2; i++) {
 						newServers.set(neighbor.get(i), Graph.nodes[moveInNodesId.get(i)]);
@@ -139,52 +112,54 @@ public class VNS {
 
 	public static void moveThreeServer() {
 	
-	boolean findBetter = true;
-	while (findBetter) {
-		findBetter = false;
-		// Collections of indices of server to move out.
-		List<ArrayList<Integer>> neighborhood = Util.combine(Search.servers.size(), 3);
-		// Collections of indices of nodes to move in.
-		List<ArrayList<Integer>> moveInNodes = Util.getNodesCombinations(Search.servers, 3);
-		
-		for (ArrayList<Integer> neighbor : neighborhood) {
+		boolean findBetter = true;
+		while (findBetter) {
+			findBetter = false;
+			// Collections of indices of server to move out.
+			List<ArrayList<Integer>> neighborhood = Util.combine(Search.servers.size(), 3);
+			// Collections of indices of nodes to move in.
+			List<ArrayList<Integer>> moveInNodes = Util.getNodesCombinations(Search.servers, 3);
 			
-			for (List<Integer> moveInNodesId : moveInNodes) {
-				List<Node> newServers = new ArrayList<>(Search.servers);
-				// Get new servers
-				for (int i = 0; i < 3; i++) {
-					newServers.set(neighbor.get(i), Graph.nodes[moveInNodesId.get(i)]);
-				}
+			for (ArrayList<Integer> neighbor : neighborhood) {
 				
-				List<Route> newSolution = getBestSolutionGivenServers(newServers);
-				if (newSolution != null) {
-					findBetter = true;
-					Search.servers = newServers;
-					Search.updateSolution(newSolution);
-					System.out.println("new best cost by move three servers " + Search.cost);
-					changePathsSwapFirst(Search.solution);
-					break;
+				for (List<Integer> moveInNodesId : moveInNodes) {
+					if (System.nanoTime() - Search.startTime / 1000000 > 89000) {
+						return;
+					}
+					List<Node> newServers = new ArrayList<Node>(Search.servers);
+					// Get new servers
+					for (int i = 0; i < 3; i++) {
+						newServers.set(neighbor.get(i), Graph.nodes[moveInNodesId.get(i)]);
+					}
+					
+					List<Route> newSolution = getBestSolutionGivenServers(newServers);
+					if (newSolution != null) {
+						findBetter = true;
+						Search.servers = newServers;
+						Search.updateSolution(newSolution);
+						System.out.println("new best cost by move three servers " + Search.cost);
+						changePathsSwapFirst(Search.solution);
+						break;
+					}
 				}
 			}
-		}
-		
-		if (!findBetter) {
-			break;
+			
+			if (!findBetter) {
+				break;
+			}
 		}
 	}
 	
-}
-	
 	public static void dropServer() {
-		Map<Integer, List<Route>> serverPaths = new HashMap<>();
-		Map<Integer, Set<Integer>> droppedClients = new HashMap<>(); 
+		Map<Integer, List<Route>> serverPaths = new HashMap<Integer, List<Route>>();
+		Map<Integer, Set<Integer>> droppedClients = new HashMap<Integer, Set<Integer>>(); 
 		
 		// Get up to date solution.
 		Search.refreshSolution();
 		for (Route path : Search.solution) {
 			if (!serverPaths.containsKey(path.server)) {
-				List<Route> route = new ArrayList<>();
-				Set<Integer> clients = new HashSet<>();
+				List<Route> route = new ArrayList<Route>();
+				Set<Integer> clients = new HashSet<Integer>();
 				route.add(path);
 				clients.add(path.client);
  				serverPaths.put(path.server, route);
@@ -206,22 +181,22 @@ public class VNS {
 			// Remove paths from network
 			Constructive.restorePaths(serverPaths.get(serverId));
 			// Get the new solution.
-			List<Route> newSolution = new ArrayList<>(Search.solution);
+			List<Route> newSolution = new ArrayList<Route>(Search.solution);
 			newSolution.removeAll(serverPaths.get(serverId));
 			
-			List<Integer> changedBandwidths = new ArrayList<>();
+			List<Integer> changedBandwidths = new ArrayList<Integer>();
 			
 			for (Route path : newSolution) {
 				changedBandwidths.add(path.occupiedBandwidth);
 			}
 			
 			// Clients that connect to the dropped server.
-			List<Integer> lostClients = new ArrayList<>(droppedClients.get(serverId));
+			List<Integer> lostClients = new ArrayList<Integer>(droppedClients.get(serverId));
 			
 			for (int j = 0; j < lostClients.size(); j++) {
 				// Get paths from remaining servers to one lost client.
 				int clientId = lostClients.get(j);
-				List<Route> pathsToClients = new ArrayList<>();
+				List<Route> pathsToClients = new ArrayList<Route>();
 				
 				if (Graph.nodes[clientId].demands == 0) {
 					continue;
@@ -288,7 +263,7 @@ public class VNS {
 			for (ArrayList<Integer> neighbor : neighborhood) {
 					
 					for (List<Integer> moveInNodesId : moveInNodes) {
-						List<Node> newServers = new ArrayList<>(Search.servers);
+						List<Node> newServers = new ArrayList<Node>(Search.servers);
 						// Get new servers
 						for (int i = 0; i < k; i++) {
 							newServers.set(neighbor.get(i), Graph.nodes[moveInNodesId.get(i)]);
@@ -316,7 +291,7 @@ public class VNS {
 	}
 	
 	public static List<Route> getBestSolutionGivenServers(List<Node> servers) {
-		List<Route> newSolution = new ArrayList<>();
+		List<Route> newSolution = new ArrayList<Route>();
 		for (Node server : servers) {
 			for (Node clientNode : Graph.clientNodes) {
 				newSolution.addAll(Route.getShortestPaths(server.vertexId, clientNode.vertexId));
@@ -331,7 +306,7 @@ public class VNS {
 	
 	// Not better than getBestSolutionGivenServers by cost.
 	public static List<Route> getBestSolutionGivenServersStartFromClients(List<Node> servers) {
-		List<Route> newSolution = new ArrayList<>();
+		List<Route> newSolution = new ArrayList<Route>();
 		Route.removeAllPaths();
 		for (Node clientNode : Graph.clientNodes) {
 			for (Node server : servers) {
@@ -352,7 +327,7 @@ public class VNS {
 	}
 	
 	public static void changePathsRandom(List<Route> solution) {
-		List<Route> newSolution = new ArrayList<>(solution);
+		List<Route> newSolution = new ArrayList<Route>(solution);
 		for (int i = 0; i < 1000; i++) {
 			Collections.shuffle(newSolution);
 			if (isBetter(newSolution)) {
@@ -363,7 +338,7 @@ public class VNS {
 	}
 	
 	public static void changePathsSwapFirst(List<Route> solution) {
-		List<Route> newSolution = new ArrayList<>(solution);
+		List<Route> newSolution = new ArrayList<Route>(solution);
 		
 		boolean findBetter = true;
 		while (findBetter) {
@@ -391,7 +366,7 @@ public class VNS {
 	}
 	
 	public static void reinsert(List<Route> solution) {
-		List<Route> newSolution = new ArrayList<>(solution);
+		List<Route> newSolution = new ArrayList<Route>(solution);
 		// Indicate whether the station has been inserted.
 		boolean inserted = false;
 		int i = 0; 
@@ -429,7 +404,7 @@ public class VNS {
 	}
 	
 	public static void changePathsSwapBest(List<Route> solution) {
-		List<Route> newSolution = new ArrayList<>(solution);
+		List<Route> newSolution = new ArrayList<Route>(solution);
 		
 		
 		boolean findBetter = true;
@@ -491,7 +466,7 @@ public class VNS {
 	}
 	
 	public static List<Node> getPromisingNodes() {
-		List<Node> candidates = new ArrayList<>(Arrays.asList(Graph.nodes));
+		List<Node> candidates = new ArrayList<Node>(Arrays.asList(Graph.nodes));
 		Collections.sort(candidates, new Comparator<Node>() {
 
 			@Override

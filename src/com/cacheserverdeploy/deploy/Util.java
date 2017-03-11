@@ -70,7 +70,7 @@ public class Util {
 		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\case1.txt", null);
 		Graph.makeGraph(graphContent);
 		
-		List<Node> exclusive = new ArrayList<>();
+		List<Node> exclusive = new ArrayList<Node>();
 		exclusive.add(Graph.nodes[3]);
 		exclusive.add(Graph.nodes[6]);
 		exclusive.add(Graph.nodes[7]);

@@ -22,9 +22,9 @@ public class Route implements Comparable<Route>{
 	public int maxBandwidth;
 	public int averageCost;
 	public int occupiedBandwidth;
-	public List<Integer> nodes = new ArrayList<>();
-	public List<Edge> edges = new ArrayList<>();
-	public static Map<Pair<Integer, Integer>, List<Route>> shortestPaths = new HashMap<>();
+	public List<Integer> nodes = new ArrayList<Integer>();
+	public List<Edge> edges = new ArrayList<Edge>();
+	public static Map<Pair<Integer, Integer>, List<Route>> shortestPaths = new HashMap<Pair<Integer, Integer>, List<Route>>();
 	
 	public Route(int server, int client) {
 		this.server = server;
@@ -50,7 +50,7 @@ public class Route implements Comparable<Route>{
 	}
 	
 	public static List<Route> getShortestPaths(int start, int end) {
-		Pair<Integer, Integer> pair = new Pair<>(start, end);
+		Pair<Integer, Integer> pair = new Pair<Integer, Integer>(start, end);
 		if (shortestPaths.get(pair) == null) {
 			shortestPaths.put(pair, YenKSP.kspYen(start, end));
 		}

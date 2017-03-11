@@ -14,7 +14,7 @@ import java.util.Map;
  */
 public class Edge implements Comparable<Edge> {
 	
-	public static Map<Pair<Integer, Integer>, Edge> edgeMap = new HashMap<>();
+	public static Map<Pair<Integer, Integer>, Edge> edgeMap = new HashMap<Pair<Integer, Integer>, Edge>();
 	public final int source;
 	public final int target;
 	public final int cost;
