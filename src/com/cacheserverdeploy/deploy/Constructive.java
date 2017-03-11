@@ -99,11 +99,10 @@ public class Constructive {
 			Search.servers.add(newServer);
 			Search.solution.addAll(bestPaths);
 			Search.cost = Search.computerCost(Search.solution);
-			if (Search.isFeasible(Search.solution)) {
-				Search.isFeasible = true;
-			}
 		}
-		
+		if (Search.isFeasible(Search.solution)) {
+			Search.isFeasible = true;
+		}
 	}
 	
 	public static List<Route> greedyConstructMultipleTimes() {

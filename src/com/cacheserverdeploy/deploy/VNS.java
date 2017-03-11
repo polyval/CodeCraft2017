@@ -471,6 +471,9 @@ public class VNS {
 		if (!Search.isFeasible) {
 			if (Search.isFeasible(newSolution) || 
 					Search.computerCost(newSolution) - Search.cost + 8 * (Search.getCurTotalOutput() - Search.getOutput(newSolution)) < 0) {
+				if (Search.isFeasible(newSolution)) {
+					Search.isFeasible = true;
+				}
 				return true;
 			}
 		}
