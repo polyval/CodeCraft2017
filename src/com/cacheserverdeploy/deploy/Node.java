@@ -3,6 +3,8 @@
  */
 package com.cacheserverdeploy.deploy;
 
+import java.util.List;
+
 /**
  * @author JwZhou
  *
@@ -21,6 +23,15 @@ public class Node implements Comparable<Node> {
 	
 	public Node(int vertexId) {
 		this.vertexId = vertexId;
+	}
+	
+	public int getMaximumOutput() {
+		int maximumOutput = 0;
+		List<Edge> edges = Graph.adj[vertexId];
+		for (Edge edge : edges) {
+			maximumOutput += edge.bandwidth;
+		}
+		return maximumOutput;
 	}
 	
 	@Override

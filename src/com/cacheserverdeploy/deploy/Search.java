@@ -20,7 +20,9 @@ public class Search {
 	public static List<Node> servers = new ArrayList<>();
 	public static ArrayList<Node> clientNodes = new ArrayList<>(Graph.clientVertexNum);
 	public static List<Route> solution = new ArrayList<>();
+	public static List<Integer> occupiedBandwidths = new ArrayList<>();
 	public static int cost = Graph.clientVertexNum * Graph.serverCost;
+	public static boolean isFeasible = false;
 	
 	public static void initialize() {
 		// Get all the client nodes.
@@ -258,7 +260,24 @@ public class Search {
 	/*
 	 * Resets the data.
 	 */
-	public void reset() {
+	public static void reset() {
+		// Reset edges.
+		for (List<Edge> edges : Graph.adj) {
+			for (Edge edge : edges) {
+				edge.bandwidth = Graph.edgeBandwidth[edge.source][edge.target];
+			}
+		}
+		// Reset paths
+		for (List<Route> paths : Route.shortestPaths.values()) {
+			for (Route path : paths) {
+				path.occupiedBandwidth = 0;
+				path.computeBandwidthAndCost();
+			}
+		}
+		// Reset client demands
+		for (int i = 0; i < Graph.clientVertexNum; i++) {
+			Graph.nodes[Graph.clientVertexId[i]].demands = Graph.clientDemand[i];
+		}
 	}
 	
 	public static boolean isFeasible(List<Route> solution) {
@@ -281,6 +300,42 @@ public class Search {
 			cost += route.averageCost * route.occupiedBandwidth;
 		}
 		return cost;
+	}
+	
+	public static void updateSolution(List<Route> newSolution) {
+		solution.clear();
+		solution = new ArrayList<>(newSolution);
+		cost = computerCost(solution);
+		occupiedBandwidths.clear();
+		for (Route path : solution) {
+			occupiedBandwidths.add(path.occupiedBandwidth);
+		}
+	}
+	
+	public static void refreshSolution() {
+		for (int i = 0; i < solution.size(); i++) {
+			solution.get(i).occupiedBandwidth = occupiedBandwidths.get(i);
+		}
+	}
+	
+	public static int getCurTotalOutput() {
+		int totalBandwidths = 0;
+		for (int bandwidth : occupiedBandwidths) {
+			totalBandwidths += bandwidth;
+		}
+		return totalBandwidths;
+	}
+	
+	public static int getOutput(List<Route> newSolution) {
+		int remainingBandwidths = 0;
+		for (Node client : Graph.clientNodes) {
+			remainingBandwidths += client.demands;
+		}
+		int total = 0;
+		for (int demands : Graph.clientDemand) {
+			total += demands;
+		}
+		return total - remainingBandwidths;
 	}
 	
 	public static boolean deepCheck(List<Route> solution) {
@@ -309,5 +364,30 @@ public class Search {
 		
 		return true;
 		
+	}
+	
+	public static String[] getResults(String[] graphContent) {
+		Graph.makeGraph(graphContent);
+		Constructive.greedyConstruct();
+		VNS.changePathsSwapFirst(Search.solution);
+		VNS.moveServer();
+		
+		refreshSolution();
+		
+		List<String> res = new ArrayList<>();
+		for (Route path : solution) {
+			if (path.occupiedBandwidth != 0) {
+				res.add(path.toString());
+			}
+		}
+		
+		String[] resString = new String[res.size() + 2];
+		resString[0] = String.valueOf(res.size());
+		resString[1] = "";
+		for (int i = 0; i < res.size(); i++) {
+			resString[i+2] = res.get(i); 
+		}
+		
+		return resString;
 	}
 }

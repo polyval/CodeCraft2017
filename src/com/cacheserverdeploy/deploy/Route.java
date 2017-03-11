@@ -106,7 +106,11 @@ public class Route implements Comparable<Route>{
 	 * Removes this path from network.
 	 */
 	public void removePath() {
+		computeBandwidthAndCost();
 		// Restore edges' bandwidth.
+		if (occupiedBandwidth == 0) {
+			return;
+		}
 		for (Edge edge : edges) {
 			edge.bandwidth += occupiedBandwidth;
 		}
@@ -142,7 +146,7 @@ public class Route implements Comparable<Route>{
 			s.append(nodeId);
 			s.append(" ");
 		}
-		return s.toString() + occupiedBandwidth + " " + Graph.nodes[client].vertexId;
+		return s.toString() + Graph.nodes[client].clientId  + " " + occupiedBandwidth;
 	}
 
 	@Override
