@@ -78,19 +78,32 @@ public class Search {
 	
 	public static int computerCost(List<Route> solution) {
 		int cost = 0;
-		cost += servers.size() * Graph.serverCost;
+		List<Integer> serversId = new ArrayList<Integer>();
+		
 		for (Route route : solution) {
-			cost += route.averageCost * route.occupiedBandwidth;
+			if (route.occupiedBandwidth != 0) {
+				cost += route.averageCost * route.occupiedBandwidth;
+				if (!serversId.contains(route.server)) {
+					serversId.add(route.server);
+					cost += Graph.serverCost;
+				}
+			}
+			
 		}
 		return cost;
 	}
 	
 	public static void updateSolution(List<Route> newSolution) {
 		solution.clear();
+		servers.clear();
+		
 		solution = new ArrayList<Route>(newSolution);
 		cost = computerCost(solution);
 		occupiedBandwidths.clear();
 		for (Route path : solution) {
+			if (!servers.contains(Graph.nodes[path.server])) {
+				servers.add(Graph.nodes[path.server]);
+			}
 			occupiedBandwidths.add(path.occupiedBandwidth);
 		}
 	}
