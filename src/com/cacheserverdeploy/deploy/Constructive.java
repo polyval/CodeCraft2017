@@ -60,7 +60,7 @@ public class Constructive {
 					}
 //					
 //					// Start with path that costs less.
-//					List<Route> allPaths = new ArrayList<>();
+//					List<Route> allPaths = new ArrayList<Route>();
 //					for (Node clientNode : Graph.clientNodes) {
 //						// Client node that still has demands.
 //						allPaths.addAll(Route.getShortestPaths(node.vertexId, clientNode.vertexId));
@@ -103,7 +103,11 @@ public class Constructive {
 		if (Search.isFeasible(Search.solution)) {
 			Search.isFeasible = true;
 		}
-		Search.updateSolution(Search.solution);
+		else {
+			Search.cost = Graph.serverCost * Graph.clientVertexNum;
+			Search.solution.clear();
+			Search.servers = Arrays.asList(Graph.clientNodes);
+		}
 	}
 	
 	public static List<Route> greedyConstructMultipleTimes() {
