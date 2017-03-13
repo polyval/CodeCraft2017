@@ -22,7 +22,6 @@ import com.filetool.util.LogUtil;
  */
 public class VNS {
 	
-	
 	public static void moveServer() {
 		
 		boolean findBetter = true;
@@ -51,9 +50,8 @@ public class VNS {
 //							break;
 //						}
 						findBetter = true;
-						Search.servers = newServers;
 						Search.updateSolution(newSolution);
-						System.out.println("new best cost by move server " + Search.cost);
+						System.out.println("new best cost by move server " + Search.cost + "" + Search.servers);
 						break;
 					}
 				}
@@ -78,9 +76,9 @@ public class VNS {
 			for (ArrayList<Integer> neighbor : neighborhood) {
 				
 				for (List<Integer> moveInNodesId : moveInNodes) {
-					if ((System.nanoTime() - Search.startTime) / 1000000 > 89000) {
-						return;
-					}
+//					if ((System.nanoTime() - Search.startTime) / 1000000 > 89000) {
+//						return;
+//					}
 					List<Node> newServers = new ArrayList<Node>(Search.servers);
 					// Get new servers
 					for (int i = 0; i < 2; i++) {
@@ -90,13 +88,12 @@ public class VNS {
 					List<Route> newSolution = getBestSolutionGivenServers(newServers);
 					if (newSolution != null) {
 						int cost = Search.cost;
-						changePathsSwapFirst(newSolution);
 						if (Search.cost < cost) {
 							findBetter = true;
-							Search.servers = newServers;
 							Search.updateSolution(newSolution);
 							System.out.println("new best cost by move two servers, new servers " + Search.servers);
 							System.out.println("new best cost by move two servers " + Search.cost);
+							moveInNodes = Util.getNodesCombinations(Search.servers, 2);
 							break;
 						}
 					}
@@ -135,10 +132,9 @@ public class VNS {
 					List<Route> newSolution = getBestSolutionGivenServers(newServers);
 					if (newSolution != null) {
 						findBetter = true;
-						Search.servers = newServers;
 						Search.updateSolution(newSolution);
 						System.out.println("new best cost by move three servers " + Search.cost);
-						changePathsSwapFirst(Search.solution);
+						moveInNodes = Util.getNodesCombinations(Search.servers, 3);
 						break;
 					}
 				}
@@ -149,6 +145,51 @@ public class VNS {
 			}
 		}
 	}
+	
+	
+	public static void moveOut() {
+		for (int i = 0; i < Search.servers.size(); i++) {
+			if ((System.nanoTime() - Search.startTime) / 1000000 > 89000) {
+				return;
+			}
+			List<Node> newServers = new ArrayList<Node>(Search.servers);
+			newServers.remove(i);
+			List<Route> newSolution = getBestSolutionGivenServers(newServers);
+			if (newSolution != null) {
+				Search.updateSolution(newSolution);
+				System.out.println("new best cost by move out server " + Search.cost);
+			}
+		}
+	}
+	
+	public static void addServer() {
+		boolean findBetter = true;
+		
+		while (findBetter) {
+			findBetter = false;
+			for(Node node : Graph.nodes) {
+				if ((System.nanoTime() - Search.startTime) / 1000000 > 89000) {
+					return;
+				}
+				List<Node> newServers = new ArrayList<Node>(Search.servers);
+				if (!Search.servers.contains(node)) {
+					newServers.add(node);
+					List<Route> newSolution = getBestSolutionGivenServers(newServers);
+					if (newSolution != null) {
+						findBetter = true;
+						Search.updateSolution(newSolution);
+						System.out.println("new best cost by add server " + Search.cost);
+						break;
+					}
+				}
+			}
+			
+			if (!findBetter) {
+				break;
+			}
+		}
+	}
+	
 	
 	public static void dropServer() {
 		Map<Integer, List<Route>> serverPaths = new HashMap<Integer, List<Route>>();
@@ -349,6 +390,9 @@ public class VNS {
 			findBetter = false;
 			for(int i = 0; i < newSolution.size() - 1; i++) {
 				for (int j = 0; j < newSolution.size(); j++) {
+					if ((System.nanoTime() - Search.startTime) / 1000000 > 89000) {
+						return;
+					}
 					Collections.swap(newSolution, i, j);
 					if (isBetter(newSolution)) {
 						Search.updateSolution(newSolution);
@@ -447,6 +491,7 @@ public class VNS {
 		if (Search.isFeasible(newSolution) && Search.computerCost(newSolution) < Search.cost) {
 			return true;
 		}
+		// If the origin solution is infeasible.
 		if (!Search.isFeasible) {
 			if (Search.isFeasible(newSolution) || 
 					Search.computerCost(newSolution) - Search.cost + 8 * (Search.getCurTotalOutput() - Search.getOutput(newSolution)) < 0) {
