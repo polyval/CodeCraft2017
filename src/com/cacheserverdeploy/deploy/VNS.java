@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 import com.filetool.util.LogUtil;
@@ -21,6 +22,80 @@ import com.filetool.util.LogUtil;
  *
  */
 public class VNS {
+	
+	
+	/**
+	 * Reduced VNS.
+	 */
+	public static void rvns() {
+		int k = 1;
+		while ((System.nanoTime() - Search.startTime) / 1000000 < 49000) {
+			List<Node> newServers = getRandomServers(k);
+			List<Route> newSolution = getBestSolutionGivenServers(newServers);
+			if (newSolution != null) {
+				Search.updateSolution(newSolution);
+				System.out.println("new best cost by move " + k + "servers, new servers " + Search.servers);
+				System.out.println("new best cost by move" + k + "servers, new servers " + Search.cost);
+			}
+			else {
+				k++;
+			}
+			if (k > Search.servers.size()) {
+				k = 1;
+			}
+		}
+	}
+	
+	public static List<Node> getRandomServers(int k) {
+		Random random = new Random();
+		
+		List<Node> newServers = new ArrayList<Node>(Search.servers);
+		List<Integer> randoms = new ArrayList<Integer>();
+		
+		for (int i = 0; i < newServers.size(); i++) {
+			randoms.add(i);
+		}
+		
+		Collections.shuffle(randoms);
+		
+		for (int i = 0; i < k; i++) {
+			int inIndex = random.nextInt(Graph.nodes.length);
+			while (newServers.contains(Graph.nodes[inIndex])) {
+				inIndex = random.nextInt(Graph.nodes.length);
+			}
+			newServers.set(randoms.get(i), Graph.nodes[inIndex]);
+		}
+		return newServers;
+	}
+	
+	public static void moveOnce(int k) {
+		List<ArrayList<Integer>> neighborhood = Util.combine(Search.servers.size(), k);
+		// Collections of indices of nodes to move in.
+		List<ArrayList<Integer>> moveInNodes = Util.getNodesCombinations(Search.servers, k);
+		
+		for (ArrayList<Integer> neighbor : neighborhood) {
+			
+			for (List<Integer> moveInNodesId : moveInNodes) {
+				if ((System.nanoTime() - Search.startTime) / 1000000 > 89000) {
+					return;
+				}
+				List<Node> newServers = new ArrayList<Node>(Search.servers);
+				// Get new servers
+				for (int i = 0; i < k; i++) {
+					newServers.set(neighbor.get(i), Graph.nodes[moveInNodesId.get(i)]);
+				}
+				
+				List<Route> newSolution = getBestSolutionGivenServers(newServers);
+				if (newSolution != null) {
+					Search.updateSolution(newSolution);
+					System.out.println("new best cost by move two servers, new servers " + Search.servers);
+					System.out.println("new best cost by move two servers " + Search.cost);
+					return;
+				}
+			}
+		}
+	}
+	
 	
 	public static void moveServer() {
 		
@@ -87,15 +162,12 @@ public class VNS {
 					
 					List<Route> newSolution = getBestSolutionGivenServers(newServers);
 					if (newSolution != null) {
-						int cost = Search.cost;
-						if (Search.cost < cost) {
-							findBetter = true;
-							Search.updateSolution(newSolution);
-							System.out.println("new best cost by move two servers, new servers " + Search.servers);
-							System.out.println("new best cost by move two servers " + Search.cost);
-							moveInNodes = Util.getNodesCombinations(Search.servers, 2);
-							break;
-						}
+						findBetter = true;
+						Search.updateSolution(newSolution);
+						System.out.println("new best cost by move two servers, new servers " + Search.servers);
+						System.out.println("new best cost by move two servers " + Search.cost);
+						moveInNodes = Util.getNodesCombinations(Search.servers, 2);
+						break;
 					}
 				}
 			}
