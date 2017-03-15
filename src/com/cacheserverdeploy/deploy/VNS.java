@@ -29,23 +29,36 @@ public class VNS {
 	 */
 	public static void rvns() {
 		int k = 1;
-		while ((System.nanoTime() - Search.startTime) / 1000000 < 49000) {
+		int count = 0;
+		while ((System.nanoTime() - Search.startTime) / 1000000 < 89000) {
+			count++;
 			List<Node> newServers = getRandomServers(k);
 			List<Route> newSolution = getBestSolutionGivenServers(newServers);
 			if (newSolution != null) {
+				count = 0;
 				Search.updateSolution(newSolution);
 				System.out.println("new best cost by move " + k + "servers, new servers " + Search.servers);
 				System.out.println("new best cost by move" + k + "servers, new servers " + Search.cost);
 			}
 			else {
+				System.out.println("no best found " + k + "servers, new servers " + Search.servers);
 				k++;
 			}
 			if (k > Search.servers.size()) {
 				k = 1;
 			}
+			if (count > 10000) {
+				return;
+			}
 		}
 	}
 	
+	/**
+	 * Gets new server combination.
+	 * 
+	 * @param k - number of servers to change.
+	 * @return
+	 */
 	public static List<Node> getRandomServers(int k) {
 		Random random = new Random();
 		
@@ -66,6 +79,26 @@ public class VNS {
 			newServers.set(randoms.get(i), Graph.nodes[inIndex]);
 		}
 		return newServers;
+	}
+	
+	public static List<Node> getNeighborNodes(Node node) {
+		List<Node> neighborNodes = new ArrayList<Node>();
+		
+		LinkedList<Node> queue = new LinkedList<Node>();
+		queue.add(node);
+		
+		while (!queue.isEmpty() && neighborNodes.size() < 50) {
+			Node curNode = queue.pop();
+			for (Edge edge : Graph.adj[curNode.vertexId]) {
+				Node targetNode = Graph.nodes[edge.target];
+				if (!neighborNodes.contains(targetNode) && targetNode != node) {
+					neighborNodes.add(targetNode);
+					queue.add(targetNode);
+				}
+			}
+		}
+		
+		return neighborNodes;
 	}
 	
 	public static void moveOnce(int k) {

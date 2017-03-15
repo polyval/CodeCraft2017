@@ -106,7 +106,7 @@ public class Constructive {
 		else {
 			Search.cost = Graph.serverCost * Graph.clientVertexNum;
 			Search.solution.clear();
-			Search.servers = Arrays.asList(Graph.clientNodes);
+			Search.servers = new ArrayList<Node>(Arrays.asList(Graph.clientNodes));
 		}
 	}
 	
