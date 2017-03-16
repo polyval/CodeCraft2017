@@ -32,6 +32,11 @@ public class Graph {
  	public static int[][] edgeWeight;
 	public static int[][] edgeBandwidth;
 	
+	// Residual Graph
+	public static ArrayList<Edge>[] resAdj;
+	public static int resVertexNum = 0;
+	public static int totalFlow;
+
 	
 	@SuppressWarnings("unchecked")
 	public static void makeGraph(String[] graphContent) {
@@ -40,11 +45,21 @@ public class Graph {
 		edgeNum = Integer.parseInt(basic[1]);
 		clientVertexNum = Integer.parseInt(basic[2]);
 		
+		// Residual vertex number.
+		resVertexNum = vertexNum + 2;
+		
 		// Faster than simply add elements one by one.
 		adj = (ArrayList<Edge>[]) new ArrayList[vertexNum];
 		for (int i = 0; i < vertexNum; i++) {
 			adj[i] = new ArrayList<Edge>();
 		}
+		
+		// Initialize residual adjacency lists.
+		resAdj = (ArrayList<Edge>[]) new ArrayList[resVertexNum];
+		for (int i = 0; i < resVertexNum; i++) {
+			resAdj[i] = new ArrayList<Edge>();
+		}
+		
 		
 		serverCost = Integer.parseInt(graphContent[2]);
 		
@@ -73,8 +88,33 @@ public class Graph {
  			}
 			
 			// Simplify the computation of uplink and downlink.
-			adj[start].add(new Edge(start, end, cost, bandwidth));
-			adj[end].add(new Edge(end, start, cost, bandwidth));
+			Edge edgeOne = new Edge(start, end, cost, bandwidth);
+			Edge edgeOpposite = new Edge(end, start, cost, bandwidth);
+			edgeOne.residualFlow = edgeOne.bandwidth;
+			edgeOpposite.residualFlow = edgeOpposite.bandwidth;
+			
+			// For residual graph.
+			Edge resEdgeOne = new Edge(end, start, -cost, bandwidth);
+			Edge resEdgeOpposite = new Edge(start, end, -cost, bandwidth);
+			resEdgeOne.residualFlow = 0;
+			resEdgeOpposite.residualFlow = 0;
+			// Set residual edge.
+			resEdgeOne.isResidual = true;
+			resEdgeOpposite.isResidual = true;
+			edgeOne.counterEdge = resEdgeOne;
+			resEdgeOne.counterEdge = edgeOne;
+			edgeOpposite.counterEdge = resEdgeOpposite;
+			resEdgeOpposite.counterEdge = edgeOpposite;
+			
+			adj[start].add(edgeOne);
+			adj[end].add(edgeOpposite);
+			
+			// For residual graph.
+			resAdj[start].add(edgeOne);
+			resAdj[start].add(resEdgeOpposite);
+			resAdj[end].add(edgeOpposite);
+			resAdj[end].add(resEdgeOne);
+			
 			
 			edgeWeight[start][end] = cost;
 			edgeWeight[end][start] = cost;
@@ -94,6 +134,20 @@ public class Graph {
 			nodes[attachedVertexId].clientId = clientId;
 			nodes[attachedVertexId].demands = demand;
 			clientNodes[clientId] = nodes[attachedVertexId];
+			
+			// For residual graph, add edges from client to super sink.
+			Edge edge = new Edge(attachedVertexId, resVertexNum - 1, 0, demand);
+			Edge resEdge = new Edge(resVertexNum - 1, attachedVertexId, 0, demand);
+			resEdge.isResidual = true;
+			edge.counterEdge = resEdge;
+			resEdge.counterEdge = edge;
+			edge.residualFlow = edge.bandwidth;
+			resEdge.residualFlow = 0;
+			// Add edges to residual graph.
+			resAdj[attachedVertexId].add(edge);
+			resAdj[resVertexNum - 1].add(resEdge);
+			
+			totalFlow += demand;
  		}
 		
 		

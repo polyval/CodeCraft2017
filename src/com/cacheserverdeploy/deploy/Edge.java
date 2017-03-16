@@ -20,6 +20,12 @@ public class Edge implements Comparable<Edge> {
 	public final int cost;
 	public int bandwidth;
 	
+	// For minimum cost flow.
+	public boolean isResidual;
+	public int residualFlow;
+	public Edge counterEdge;
+	
+	// For DFS.
 	public boolean removed = false;
 	
 	
@@ -28,7 +34,9 @@ public class Edge implements Comparable<Edge> {
 		this.target = target;
 		this.cost = cost;
 		this.bandwidth = bandwidth;
-		edgeMap.put(new Pair<Integer, Integer>(source, target), this);
+		if (cost > 0 && target < Graph.vertexNum) {
+			edgeMap.put(new Pair<Integer, Integer>(source, target), this);
+		}
 	}
 	
 	// Reversely.
