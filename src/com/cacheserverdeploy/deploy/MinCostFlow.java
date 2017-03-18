@@ -4,9 +4,7 @@
 package com.cacheserverdeploy.deploy;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
@@ -112,8 +110,8 @@ public class MinCostFlow {
 	
 	public static void setSuperSource(List<Integer> servers) {
 		for (int server : servers) {
-			Edge edge = new Edge(Graph.vertexNum, server, 10, Integer.MAX_VALUE);
-			Edge resedge = new Edge(server, Graph.vertexNum, -10, Integer.MAX_VALUE);
+			Edge edge = new Edge(Graph.vertexNum, server, 0, Integer.MAX_VALUE);
+			Edge resedge = new Edge(server, Graph.vertexNum, 0, Integer.MAX_VALUE);
 			
 			resedge.residualFlow = 0;
 			edge.residualFlow = Integer.MAX_VALUE;
@@ -155,12 +153,12 @@ public class MinCostFlow {
 	/**
 	 * Reduced VNS.
 	 */
-	public static void rvns(List<Integer> tentativeServers) {
+	public static void rvns() {
 		// Get initial Solution
-//		for (int i : Graph.clientVertexId) {
-//			servers.add(i);
-//		}
-//		cost = Graph.serverCost * Graph.clientVertexNum;
+		for (int i : Graph.clientVertexId) {
+			servers.add(i);
+		}
+		cost = Graph.serverCost * Graph.clientVertexNum;
 		
 		// Drop one
 		//      Local search
@@ -175,17 +173,17 @@ public class MinCostFlow {
 		while ((System.nanoTime() - Search.startTime) / 1000000 < 49000) {
 			
 			// Indicate we haven't tried all the possible drops.
-//			if (dropIndex < servers.size()) {
-//				// Drop one has improved the solution.
-//				if (dropOne(dropIndex)) {
-//					System.out.println("new best cost by drop " + servers);
-//					// Try to drop next.
-//					dropIndex++;
-//					continue;
-//				}
-//				// Current drop is unsuccessful, try to drop next server in the next iteration.
-//				dropIndex++;
-//			}
+			if (dropIndex < servers.size()) {
+				// Drop one has improved the solution.
+				if (dropOne(dropIndex)) {
+					System.out.println("new best cost by drop " + servers);
+					// Try to drop next.
+					dropIndex++;
+					continue;
+				}
+				// Current drop is unsuccessful, try to drop next server in the next iteration.
+				dropIndex++;
+			}
 			
 //			if (dropK < servers.size()) {
 //				if (dropK(dropK)) {
@@ -204,13 +202,13 @@ public class MinCostFlow {
 //			}
 			
 			// Drop two add one.
-//			if (dropTwoAddOne()) {
-//				// The servers has been updated, we can drop from start again.
-//				dropIndex = 0;
-//				continue;
-//			}
-//			
-//			// In this case, move won't help.
+			if (dropTwoAddOne()) {
+				// The servers has been updated, we can drop from start again.
+				dropIndex = 0;
+				continue;
+			}
+			
+			// In this case, move won't help.
 //			if (cost == Graph.clientVertexNum * Graph.serverCost) {
 //				continue;
 //			}
@@ -220,186 +218,24 @@ public class MinCostFlow {
 			if (k > 3) {
 				k = 1;
 			}
-			List<Integer> newServers = getRandomServers(k, tentativeServers);
+			List<Integer> newServers = getRandomServersFromNeighbor(k);
 			if (isBetter(newServers)) {
 				count = 0;
 				dropIndex = 0;
 				System.out.println("new best cost by move " + k + "servers, new servers " + servers);
 				System.out.println("new best cost by move" + k + "servers, new servers " + cost);
-				continue;
 			}
 			else {
 				System.out.println("no best found " + k + "servers, new servers " + servers);
 				k++;
 			}
 			
-//			if (k > 3 && servers.size() < Graph.clientVertexNum - 1) {
-//				addOne();
-//			}
-			
-			if (count > 200) {
+			if (count > 1000) {
 				return;
 			}
 		}
 	}
 	
-	public static void local() {
-		for (int i : Graph.clientVertexId) {
-			servers.add(i);
-		}
-		cost = Graph.serverCost * Graph.clientVertexNum;
-		
-		List<Integer> newServers = new ArrayList<Integer>(servers); 
-		
-		while ((System.nanoTime() - Search.startTime) / 1000000 < 49000 && newServers.size() >= 4) {
-			newServers.remove(0);
-			rvns(newServers);
-		}
-	}
-	
-	public static void dropLocalSearch() {
-		for (int i : Graph.clientVertexId) {
-			servers.add(i);
-		}
-		cost = Graph.serverCost * Graph.clientVertexNum;
-		
-		int index = 0;
-		int max = servers.size();
-		
-		List<Integer> initial = new ArrayList<Integer>(servers);
-		
-		// Try all the drops.
-		while (index < max) {
-			List<Integer> newServers = new ArrayList<Integer>(initial);
-			newServers.remove(index);
-			
-			List<ArrayList<Integer>> allPaths = new ArrayList<ArrayList<Integer>>();
-			int[] flowCost = getFlowCostGivenServers(newServers, allPaths);
-			if (flowCost[0] < Graph.totalFlow) {
-				index++;
-				System.out.println("Not feasible drop " + initial.get(index));
-				continue;
-			}
-			else {
-				newServers = getServers(allPaths);
-				int curBestCost = newServers.size() * Graph.serverCost + flowCost[1];
-				// Update solution
-				if (curBestCost < cost) {
-					System.out.println("Found best by dropping " + initial.get(index));
-					servers = new ArrayList<Integer>(newServers);
-					cost = curBestCost;
-					System.out.println("best cost " + cost);
-				}
-				// Continue dropping, find the local minimum.
-				int dropIndex = 0;
-				int maxDropIndex = newServers.size();
-				while (dropIndex < maxDropIndex) {
-					List<Integer> tempServers = new ArrayList<Integer>(newServers);
-					List<ArrayList<Integer>> tempAllPaths = new ArrayList<ArrayList<Integer>>();
-					tempServers.remove(dropIndex);
-					
-					int[] tempFlowCost = getFlowCostGivenServers(tempServers, tempAllPaths);
-					if (flowCost[0] < Graph.totalFlow) {
-						dropIndex++;
-						continue;
-					}
-					tempServers = getServers(tempAllPaths);
-					int tempCost = tempServers.size() * Graph.serverCost + tempFlowCost[1];
-					if (tempCost < curBestCost) {
-						curBestCost = tempCost;
-						newServers = tempServers;
-						dropIndex = 0;
-						maxDropIndex = newServers.size();
-						continue;
-					}
-					dropIndex++;
-				}
-				// Compare local minimal with current best solution.
-				if (curBestCost < cost) {
-					System.out.println("Found best by local search with " + initial.get(index));
-					servers = new ArrayList<Integer>(newServers);
-					cost = curBestCost;
-					System.out.println("best cost " + cost);
-				}
-				index++;
-			}
-		}
-		
-	}
-	
-	public static void bvns() {
-		
-		
-		// Deploy servers at clients vertex at first. 
-		for (int i : Graph.clientVertexId) {
-			servers.add(i);
-		}
-		cost = Graph.serverCost * Graph.clientVertexNum;
-		
-		Collections.sort(servers, new Comparator<Integer>() {
-			@Override
-			public int compare(Integer n1, Integer n2) {
-				return Graph.nodes[n1].demands - Graph.nodes[n2].demands;
-			}
-		});
-		
-		// Remove servers.
-		Boolean findBetter = true;
-		while (findBetter) {
-			findBetter = false;
-			
-			int serverNum = servers.size();
-			for (int k = 0; k < serverNum; k++) {
-				if (k >= servers.size()) {
-					break;
-				}
-				
-				List<Integer> newServers = new ArrayList<Integer>(servers);
-				newServers.remove(Integer.valueOf(servers.get(k)));
-				
-				List<ArrayList<Integer>> allPaths = new ArrayList<ArrayList<Integer>>();
-				int[] flowCost = getFlowCostGivenServers(newServers, allPaths);
-				// Drop server is feasible.
-				if (flowCost[0] == Graph.totalFlow) {
-					servers = newServers;
-					cost = flowCost[1] + servers.size() * Graph.serverCost;
-					
-					// Local search.
-					for (int i = 0 ; i < servers.size(); i++) {
-						for (Edge e : Graph.adj[servers.get(i)]) {
-							if (!newServers.contains(e.target)) {
-								newServers.set(i, e.target);
-								if (isBetter(newServers)) {
-									findBetter = true;
-									break;
-								}
-								else {
-									newServers = servers;
-								}
-							}
-						}
-						
-						if (findBetter) {
-							break;
-						}
-					}
-					
-					if (findBetter) {
-						break;
-					}
-				}
-			}
-			
-		}
-			
-			
-		
-		// No suitable server to remove.
-		
-		
-		
-		
-	}
 	
 	/**
 	 * Gets new server combination.
@@ -407,10 +243,10 @@ public class MinCostFlow {
 	 * @param k - number of servers to change.
 	 * @return
 	 */
-	public static List<Integer> getRandomServers(int k, List<Integer> tentativeServers) {
+	public static List<Integer> getRandomServers(int k) {
 		Random random = new Random();
 		
-		List<Integer> newServers = new ArrayList<Integer>(tentativeServers);
+		List<Integer> newServers = new ArrayList<Integer>(servers);
 		List<Integer> randoms = new ArrayList<Integer>();
 		
 		for (int i = 0; i < newServers.size(); i++) {
@@ -430,6 +266,7 @@ public class MinCostFlow {
 	}
 	
 	public static List<Integer> getRandomServersFromNeighbor(int k) {
+		Random random = new Random();
 		
 		List<Integer> newServers = new ArrayList<Integer>(servers);
 		List<Integer> randoms = new ArrayList<Integer>();
@@ -466,16 +303,6 @@ public class MinCostFlow {
 		return isBetter(newServers);
 	}
 	
-	public static boolean addOne() {
-		List<Integer> newServers = new ArrayList<Integer>(servers);
-		int newServer = random.nextInt(Graph.vertexNum);
-		while (newServers.contains(newServer)) {
-			newServer = random.nextInt(Graph.vertexNum);
-		}
-		newServers.add(newServer);
-		return isBetter(newServers);
-	}
-	
 	public static boolean dropK(int k) {
 		List<Integer> newServers = new ArrayList<Integer>(servers);
 		for (int i = 0; i < k; i++) {
@@ -501,17 +328,12 @@ public class MinCostFlow {
 		return isBetter(newServers);
 	}
 	
-	public static int[] getFlowCostGivenServers(List<Integer> newServers, List<ArrayList<Integer>> allPaths) {
+	public static boolean isBetter(List<Integer> newServers) {
 		clear();
 		setSuperSource(newServers);
 		
-		return getMinCostFlow(Graph.vertexNum, Graph.vertexNum + 1, Graph.totalFlow, allPaths);
-	}
-	
-	public static boolean isBetter(List<Integer> newServers) {
-		
 		List<ArrayList<Integer>> allPaths = new ArrayList<ArrayList<Integer>>();
-		int[] flowCost = getFlowCostGivenServers(newServers, allPaths);
+		int[] flowCost = getMinCostFlow(Graph.vertexNum, Graph.vertexNum + 1, Graph.totalFlow, allPaths);
 		int newCost = flowCost[1];
 		int flow = flowCost[0];
 		// Not feasible
@@ -520,29 +342,19 @@ public class MinCostFlow {
 		}
 		
 		newServers.clear();
-		for (List<Integer> path : allPaths) {
-			if (!newServers.contains(path.get(0))) {
-				newServers.add(path.get(0));
+		for (Edge e : Graph.resAdj[Graph.vertexNum]) {
+			if (e.residualFlow < Integer.MAX_VALUE) {
+				newServers.add(e.target);
 			}
 		}
 		
 		newCost += newServers.size() * Graph.serverCost;
 		if ( newCost < cost) {
 			cost = newCost;
-			servers = new ArrayList<Integer>(newServers);
+			servers = newServers;
 			return true;
 		}
 		return false;
-	}
-	
-	public static List<Integer> getServers(List<ArrayList<Integer>> allPaths) {
-		List<Integer> newServers = new ArrayList<Integer>();
-		for (List<Integer> path : allPaths) {
-			if (!newServers.contains(path.get(0))) {
-				newServers.add(path.get(0));
-			}
-		}
-		return newServers;
 	}
 	
 	public static void main(String[] args) {
@@ -560,15 +372,8 @@ public class MinCostFlow {
 		
 //		setSuperSource(servers);
 		long startTime = System.nanoTime();
-//		bvns();
-//		for (int i : Graph.clientVertexId) {
-//			servers.add(i);
-//		}
-//		cost = Graph.serverCost * Graph.clientVertexNum;
-//		rvns(servers);
-		dropLocalSearch();
+		rvns();
 		System.out.println(cost);
-		System.out.println(servers);
 		
 //		System.out.println(getMinCostFlow(0, 48, 500));
 		long endTime = System.nanoTime();
