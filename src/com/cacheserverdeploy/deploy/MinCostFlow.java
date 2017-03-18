@@ -168,21 +168,29 @@ public class MinCostFlow {
 		
 		int k = 1;
 		int count = 0;
-		int dropIndex = 0;
-		int dropK = 1;
+		int dropIndex = 4;
+		int moveLimit = 100;
 		while ((System.nanoTime() - Search.startTime) / 1000000 < 49000) {
-			
-			// Indicate we haven't tried all the possible drops.
-			if (dropIndex < servers.size()) {
-				// Drop one has improved the solution.
-				if (dropOne(dropIndex)) {
-					System.out.println("new best cost by drop " + servers);
-					// Try to drop next.
+			if (count >= moveLimit || cost == Graph.clientVertexNum * Graph.serverCost) {
+				// Indicate we haven't tried all the possible drops.
+				if (dropIndex < servers.size()) {
+					// Drop one has improved the solution.
+					if (dropOne(dropIndex)) {
+						System.out.println("new best cost by drop " + servers);
+						dropIndex++;
+						count = 0;
+						continue;
+					}
+					// Current drop is unsuccessful, try to drop next server in the next iteration.
 					dropIndex++;
-					continue;
 				}
-				// Current drop is unsuccessful, try to drop next server in the next iteration.
-				dropIndex++;
+				
+				// Drop two add one.
+//				if (dropTwoAddOne()) {
+//					// The servers has been updated, we can drop from start again.
+//					dropIndex = 0;
+//					continue;
+//				}
 			}
 			
 //			if (dropK < servers.size()) {
@@ -201,17 +209,12 @@ public class MinCostFlow {
 //				}
 //			}
 			
-			// Drop two add one.
-			if (dropTwoAddOne()) {
-				// The servers has been updated, we can drop from start again.
-				dropIndex = 0;
-				continue;
-			}
+			
 			
 			// In this case, move won't help.
-//			if (cost == Graph.clientVertexNum * Graph.serverCost) {
-//				continue;
-//			}
+			if (cost == Graph.clientVertexNum * Graph.serverCost) {
+				continue;
+			}
 			
 			// Number of successive iterations with no improvement.
 			count++;
@@ -221,13 +224,16 @@ public class MinCostFlow {
 			List<Integer> newServers = getRandomServersFromNeighbor(k);
 			if (isBetter(newServers)) {
 				count = 0;
-				dropIndex = 0;
 				System.out.println("new best cost by move " + k + "servers, new servers " + servers);
 				System.out.println("new best cost by move" + k + "servers, new servers " + cost);
 			}
 			else {
 				System.out.println("no best found " + k + "servers, new servers " + servers);
 				k++;
+			}
+			
+			if (count >= moveLimit) {
+				dropIndex = 0;
 			}
 			
 			if (count > 1000) {
@@ -358,7 +364,7 @@ public class MinCostFlow {
 	}
 	
 	public static void main(String[] args) {
-		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\case3.txt", null);
+		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\case1.txt", null);
 		Graph.makeGraph(graphContent);
 		
 //		List<Integer> servers = new ArrayList<Integer>();
