@@ -4,7 +4,6 @@
 package com.cacheserverdeploy.deploy;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,9 +13,6 @@ import java.util.Map;
  */
 public class Graph {
 	
-	public static final int vertexNumMax = 1000;
-	public static final int clientVertexNumMax = 500;
-	
 	public static int vertexNum = 0;
 	public static int edgeNum = 0;
 	public static int clientVertexNum = 0;
@@ -25,11 +21,9 @@ public class Graph {
 	public static int[] clientVertexId;
 	public static int[] clientDemand;
 	public static Map<Integer, Integer> vertexToClient = new HashMap<Integer, Integer>();
-	// Do not use index to get node from here.
-	public static Node[] clientNodes;
+	
 	// Adjacency lists;
 	public static ArrayList<Edge>[] adj;
-	public static Node[] nodes;
 	
 	// Used to reset the data.
  	public static int[][] edgeWeight;
@@ -69,10 +63,8 @@ public class Graph {
 		// Initialize.
 		clientVertexId = new int[clientVertexNum];
 		clientDemand = new int[clientVertexNum];
-		clientNodes = new Node[clientVertexNum];
 		edgeWeight = new int[vertexNum][vertexNum];
 		edgeBandwidth = new int[vertexNum][vertexNum];
-		nodes = new Node[vertexNum];
 		
 		// Read edges
 		for (int i = 4; i < edgeNum + 4; i++) {
@@ -81,14 +73,6 @@ public class Graph {
 			int end = Integer.parseInt(edgeInfo[1]);
 			int bandwidth = Integer.parseInt(edgeInfo[2]);
 			int cost = Integer.parseInt(edgeInfo[3]);
-			
-			if (nodes[start] == null) {
-				nodes[start] = new Node(start);
-			}
-			
-			if (nodes[end] == null) {
-				nodes[end] = new Node(end);
- 			}
 			
 			// Simplify the computation of uplink and downlink.
 			Edge edgeOne = new Edge(start, end, cost, bandwidth);
@@ -134,9 +118,6 @@ public class Graph {
 			
 			clientVertexId[clientId] = attachedVertexId;
 			clientDemand[clientId] = demand;
-			nodes[attachedVertexId].clientId = clientId;
-			nodes[attachedVertexId].demands = demand;
-			clientNodes[clientId] = nodes[attachedVertexId];
 			
 			vertexToClient.put(attachedVertexId, clientId);
 			
@@ -155,9 +136,5 @@ public class Graph {
 			totalFlow += demand;
  		}
 		
-		
-		for (ArrayList<Edge> edges : Graph.adj) {
-			Collections.sort(edges);
-		}
 	}
 }

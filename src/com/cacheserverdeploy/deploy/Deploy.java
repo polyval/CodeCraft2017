@@ -13,7 +13,7 @@ public class Deploy
     public static String[] deployServer(String[] graphContent)
     {
         /**do your work here**/
-        return Search.getResults(graphContent);
+        return SearchServers.getResults(graphContent);
     }
 
 }

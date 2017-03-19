@@ -198,9 +198,9 @@ public class Zkw {
 	}
 	
 	public static void main(String[] args) {
-		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\case0.txt", null);
+		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\case99.txt", null);
 		Graph.makeGraph(graphContent);
-		
+//		
 		List<Integer> servers = new ArrayList<Integer>();
 		servers.add(22);
 		servers.add(7);
@@ -212,7 +212,7 @@ public class Zkw {
 		long startTime = System.nanoTime();
 		
 		List<Path> allPaths = new ArrayList<Path>();
-		System.out.println(Arrays.toString(getMinCostFlow(50, 51, allPaths)));
+		System.out.println(Arrays.toString(getMinCostFlow(1000, 1001, allPaths)));
 		System.out.println(deepCheck(allPaths));
 		long endTime = System.nanoTime();
 		System.out.println((endTime - startTime) / 1000000 + "ms");

@@ -21,6 +21,7 @@ public class SearchServers {
 	public static List<Path> solution = new ArrayList<Path>();
 	public static List<Integer> servers = new ArrayList<Integer>();
 	public static Random random = new Random();
+	public static long startTime = System.nanoTime();
 	
 	/**
 	 * Reduced VNS.
@@ -42,20 +43,21 @@ public class SearchServers {
 		int count = 0;
 		int dropIndex = 0;
 		int moveLimit = 100;
-		while ((System.nanoTime() - Search.startTime) / 1000000 < 89000) {
-			if (count >= moveLimit || cost == Graph.clientVertexNum * Graph.serverCost) {
+		int dropK = 1;
+		while ((System.nanoTime() - startTime) / 1000000 < 30000) {
+//			if (count >= moveLimit || cost == Graph.clientVertexNum * Graph.serverCost) {
 				// Indicate we haven't tried all the possible drops.
-				if (dropIndex < servers.size()) {
-					// Drop one has improved the solution.
-					if (dropOne(dropIndex)) {
-						System.out.println("new best cost by drop " + servers);
-						dropIndex++;
-						count = 0;
-						continue;
-					}
-					// Current drop is unsuccessful, try to drop next server in the next iteration.
-					dropIndex++;
-				}
+//				if (dropIndex < servers.size()) {
+//					// Drop one has improved the solution.
+//					if (dropOne(dropIndex)) {
+//						System.out.println("new best cost by drop " + servers);
+//						dropIndex++;
+//						count = 0;
+//						continue;
+//					}
+//					// Current drop is unsuccessful, try to drop next server in the next iteration.
+//					dropIndex++;
+//				}
 				
 				// Drop two add one.
 //				if (dropTwoAddOne()) {
@@ -63,34 +65,34 @@ public class SearchServers {
 //					dropIndex = 0;
 //					continue;
 //				}
-			}
-			
-//			if (dropK < servers.size()) {
-//				if (dropK(dropK)) {
-//					System.out.println("new best cost by drop " + servers + " " + cost);
-//					dropK++;
-//					continue;
-//				}
-//			}
-//			else {
-//				dropK = 1;
-//				if (dropK(dropK)) {
-//					System.out.println("new best cost by drop " + servers + " " + cost);
-//					dropK++;
-//					continue;
-//				}
 //			}
 			
-			
-			
-			// In this case, move won't help.
-			if (cost == Graph.clientVertexNum * Graph.serverCost) {
-				continue;
+			if (dropK < servers.size()) {
+				if (dropK(dropK)) {
+					System.out.println("new best cost by drop " + servers + " " + cost);
+					dropK++;
+					count = 0;
+					continue;
+				}
 			}
+			else {
+				dropK = 1;
+				if (dropK(dropK)) {
+					System.out.println("new best cost by drop " + servers + " " + cost);
+					dropK++;
+					count = 0;
+					continue;
+				}
+			}
+			
+//			// In this case, move won't help.
+//			if (cost == Graph.clientVertexNum * Graph.serverCost) {
+//				continue;
+//			}
 			
 			// Number of successive iterations with no improvement.
 			count++;
-			if (k > 3) {
+			if (k >= Math.min(servers.size(), 4)) {
 				k = 1;
 			}
 			List<Integer> newServers = getRandomServers(k, servers);
@@ -226,21 +228,39 @@ public class SearchServers {
 		}
 		
 		newCost += newServers.size() * Graph.serverCost;
-		if ( newCost < cost) {
+		if (newCost < cost) {
 			cost = newCost;
 			servers = newServers;
+			solution = allPaths;
 			return true;
 		}
 		return false;
 	}
 	
+	public static String[] getResults(String[] graphContent) {
+		Graph.makeGraph(graphContent);
+		
+		rvns();
+		String[] res = new String[solution.size() + 2];
+		res[0] = String.valueOf(solution.size());
+		res[1] = "";
+		for (int i = 2; i < res.length; i++) {
+			res[i] = solution.get(i - 2).toString(); 
+		}
+		
+		return res;
+	}
+	
 	public static void main(String[] args) {
-		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\case0.txt", null);
+		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\case4.txt", null);
 		Graph.makeGraph(graphContent);
 
 		long startTime = System.nanoTime();
 		rvns();
 		System.out.println(cost);
+		System.out.println(solution);
+		System.out.println(servers);
+		System.out.println(Zkw.deepCheck(solution));
 //		List<ArrayList<Integer>> allPaths = new ArrayList<ArrayList<Integer>>();
 		long endTime = System.nanoTime();
 		System.out.println((endTime - startTime) / 1000000 + "ms");
