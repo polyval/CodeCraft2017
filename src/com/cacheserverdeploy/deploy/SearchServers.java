@@ -44,20 +44,20 @@ public class SearchServers {
 		int dropIndex = 0;
 		int moveLimit = 100;
 		int dropK = 1;
-		while ((System.nanoTime() - startTime) / 1000000 < 30000) {
-//			if (count >= moveLimit || cost == Graph.clientVertexNum * Graph.serverCost) {
-				// Indicate we haven't tried all the possible drops.
-//				if (dropIndex < servers.size()) {
-//					// Drop one has improved the solution.
-//					if (dropOne(dropIndex)) {
-//						System.out.println("new best cost by drop " + servers);
-//						dropIndex++;
-//						count = 0;
-//						continue;
-//					}
-//					// Current drop is unsuccessful, try to drop next server in the next iteration.
-//					dropIndex++;
-//				}
+		while ((System.nanoTime() - startTime) / 1000000 < 89000) {
+			if (count >= moveLimit || cost == Graph.clientVertexNum * Graph.serverCost) {
+//				 Indicate we haven't tried all the possible drops.
+				if (dropIndex < servers.size()) {
+					// Drop one has improved the solution.
+					if (dropOne(dropIndex)) {
+						System.out.println("new best cost by drop " + servers);
+						dropIndex++;
+						count = 0;
+						continue;
+					}
+					// Current drop is unsuccessful, try to drop next server in the next iteration.
+					dropIndex++;
+				}
 				
 				// Drop two add one.
 //				if (dropTwoAddOne()) {
@@ -65,25 +65,25 @@ public class SearchServers {
 //					dropIndex = 0;
 //					continue;
 //				}
-//			}
+			}
 			
-			if (dropK < servers.size()) {
-				if (dropK(dropK)) {
-					System.out.println("new best cost by drop " + servers + " " + cost);
-					dropK++;
-					count = 0;
-					continue;
-				}
-			}
-			else {
-				dropK = 1;
-				if (dropK(dropK)) {
-					System.out.println("new best cost by drop " + servers + " " + cost);
-					dropK++;
-					count = 0;
-					continue;
-				}
-			}
+//			if (dropK < servers.size()) {
+//				if (dropK(dropK)) {
+//					System.out.println("new best cost by drop " + servers + " " + cost);
+//					dropK++;
+//					count = 0;
+//					continue;
+//				}
+//			}
+//			else {
+//				dropK = 1;
+//				if (dropK(dropK)) {
+//					System.out.println("new best cost by drop " + servers + " " + cost);
+//					dropK++;
+//					count = 0;
+//					continue;
+//				}
+//			}
 			
 //			// In this case, move won't help.
 //			if (cost == Graph.clientVertexNum * Graph.serverCost) {
@@ -228,6 +228,14 @@ public class SearchServers {
 		}
 		
 		newCost += newServers.size() * Graph.serverCost;
+		// Develop version.
+		if (AnalyseUtil.cost[newServers.size() - 1] == 0) {
+			AnalyseUtil.cost[newServers.size() - 1] = newCost;
+		}
+		else {
+			AnalyseUtil.cost[newServers.size() - 1] = Math.min(AnalyseUtil.cost[newServers.size() - 1], newCost);
+		}
+		 
 		if (newCost < cost) {
 			cost = newCost;
 			servers = newServers;
@@ -252,17 +260,18 @@ public class SearchServers {
 	}
 	
 	public static void main(String[] args) {
-		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\case4.txt", null);
+		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\case.txt", null);
 		Graph.makeGraph(graphContent);
 
 		long startTime = System.nanoTime();
 		rvns();
-		System.out.println(cost);
 		System.out.println(solution);
 		System.out.println(servers);
 		System.out.println(Zkw.deepCheck(solution));
 //		List<ArrayList<Integer>> allPaths = new ArrayList<ArrayList<Integer>>();
 		long endTime = System.nanoTime();
 		System.out.println((endTime - startTime) / 1000000 + "ms");
+		System.out.println(cost);
+		AnalyseUtil.saveTofile();
 	}
 }

@@ -5,7 +5,6 @@ package com.cacheserverdeploy.deploy;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 
 import com.filetool.util.FileUtil;
@@ -45,37 +44,6 @@ public class Zkw {
 		flowCost[0] = flow;
 		flowCost[1] = cost;
 		return flowCost;
-	}
-	
-	// Don't need it if there is no negative edge.
-	public static void spfa(int source, int sink, int[] dist, boolean[] visited) {
-		LinkedList<Integer> queue = new LinkedList<Integer>();
-		
-		Arrays.fill(dist, Integer.MAX_VALUE);
-		
-		dist[source] = 0;
-		visited[source] = true;
-		queue.push(source);
-		
-		while (!queue.isEmpty()) {
-			int u = queue.poll();
-			visited[u] = false;
-			
-			for (Edge e : Graph.resAdj[u]) {
-				int v = e.target;
-				if (e.residualFlow > 0 && dist[u] + e.cost < dist[v]) {
-					dist[v] = dist[u] + e.cost;
-					if (!visited[v]) {
-						queue.push(v);
-						visited[v] = true;
-					}
-				}
-			}
-		}
-		
-		for (int i = 0; i < dist.length; i++) {
-			dist[i] = dist[sink] - dist[i];
-		}
 	}
 	
 	public static int augment(int u, int source, int sink, int flow, int[] dist, boolean[] visited, ArrayList<Integer> path) {
