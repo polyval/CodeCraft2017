@@ -16,7 +16,7 @@ import com.filetool.util.FileUtil;
  */
 public class Zkw {
 	
-	public static int[] getMinCostFlow(int source, int sink) {
+	public static int[] getMinCostFlow(int source, int sink, List<Path> allPaths) {
 		int vertexNum = Graph.resVertexNum;
 		int[] dist = new int[vertexNum];
 		boolean[] visited = new boolean[vertexNum];
@@ -26,12 +26,16 @@ public class Zkw {
 		int[] flowCost = new int[2];
 		
 		while (true) {
-			temp = augment(source, sink, Integer.MAX_VALUE, dist, visited);
+			ArrayList<Integer> path = new ArrayList<Integer>();
+			temp = augment(source, source, sink, Integer.MAX_VALUE, dist, visited, path);
 			while (temp > 0) {
+				allPaths.add(new Path(new ArrayList<Integer>(path), temp));
+				path.clear();
+				
 				flow += temp;
 				cost += temp * dist[source];
 				Arrays.fill(visited, false);
-				temp = augment(source, sink, Integer.MAX_VALUE, dist, visited);
+				temp = augment(source, source, sink, Integer.MAX_VALUE, dist, visited, path);
 			}
 			
 			if (!lable(sink, dist, visited)) {
@@ -74,7 +78,7 @@ public class Zkw {
 		}
 	}
 	
-	public static int augment(int u, int sink, int flow, int[] dist, boolean[] visited) {
+	public static int augment(int u, int source, int sink, int flow, int[] dist, boolean[] visited, ArrayList<Integer> path) {
 		if (u == sink) {
 			return flow;
 		}
@@ -82,11 +86,19 @@ public class Zkw {
 		for (Edge e : Graph.resAdj[u]) {
 			int v = e.target;
 			if (e.residualFlow > 0 && !visited[v] && dist[v] + e.cost == dist[u]) {
-				int temp = augment(v, sink, Math.min(e.residualFlow, flow), dist, visited);
+				if (!path.contains(u) && u != source) {
+					path.add(u);
+				}
+				int temp = augment(v, source, sink, Math.min(e.residualFlow, flow), dist, visited, path);
 				if (temp > 0) {
 					e.residualFlow -= temp;
 					e.counterEdge.residualFlow += temp;
 					return temp;
+				}
+				else {
+					if (!path.isEmpty()) {
+						path.remove(path.size() - 1);
+					}
 				}
 			}
 		}
@@ -157,24 +169,53 @@ public class Zkw {
 		}
 	}
 	
+	public static boolean deepCheck(List<Path> solution) {
+		int[][] edgesBandwidth = new int[Graph.vertexNum][Graph.vertexNum];
+		int[] demands = new int[Graph.clientVertexNum];
+		for (Path path : solution) {
+			demands[path.clientId] += path.flow;
+			for (int i = 0; i < path.nodes.size() - 1; i++) {
+				edgesBandwidth[path.nodes.get(i)][path.nodes.get(i+1)] += path.flow;
+			}
+		}
+		
+		for (int i = 0; i < Graph.clientVertexNum; i++) {
+			if (demands[i] != Graph.clientDemand[i]) {
+				return false;
+			}
+		}
+		
+		for (int i = 0; i < Graph.vertexNum; i++) {
+			for (int j = 0; j < Graph.vertexNum; j++) {
+				if (edgesBandwidth[i][j] > Graph.edgeBandwidth[i][j]) {
+					return false;
+				}
+			}
+		}
+		
+		return true;
+		
+	}
+	
 	public static void main(String[] args) {
-		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\case99.txt", null);
+		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\case0.txt", null);
 		Graph.makeGraph(graphContent);
 		
 		List<Integer> servers = new ArrayList<Integer>();
-		servers.add(44);
-		servers.add(7);
-		servers.add(13);
-		servers.add(15);
 		servers.add(22);
-		servers.add(34);
+		servers.add(7);
+		servers.add(3);
+		servers.add(15);
 		servers.add(38);
 		
 		setSuperSource(servers);
 		long startTime = System.nanoTime();
 		
-		System.out.println(Arrays.toString(getMinCostFlow(50, 51)));
+		List<Path> allPaths = new ArrayList<Path>();
+		System.out.println(Arrays.toString(getMinCostFlow(50, 51, allPaths)));
+		System.out.println(deepCheck(allPaths));
 		long endTime = System.nanoTime();
 		System.out.println((endTime - startTime) / 1000000 + "ms");
+		System.out.println(allPaths);
 	}
 }

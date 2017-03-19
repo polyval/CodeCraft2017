@@ -18,6 +18,7 @@ import com.filetool.util.FileUtil;
 public class SearchServers {
 	
 	public static int cost = 0;
+	public static List<Path> solution = new ArrayList<Path>();
 	public static List<Integer> servers = new ArrayList<Integer>();
 	public static Random random = new Random();
 	
@@ -208,8 +209,8 @@ public class SearchServers {
 		Zkw.clear();
 		Zkw.setSuperSource(newServers);
 		
-		List<ArrayList<Integer>> allPaths = new ArrayList<ArrayList<Integer>>();
-		int[] flowCost = Zkw.getMinCostFlow(Graph.vertexNum, Graph.vertexNum + 1);
+		List<Path> allPaths = new ArrayList<Path>();
+		int[] flowCost = Zkw.getMinCostFlow(Graph.vertexNum, Graph.vertexNum + 1, allPaths);
 		int flow = flowCost[0];
 		int newCost = flowCost[1];
 		// Not feasible
@@ -234,9 +235,8 @@ public class SearchServers {
 	}
 	
 	public static void main(String[] args) {
-		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\case99.txt", null);
+		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\case0.txt", null);
 		Graph.makeGraph(graphContent);
-		
 
 		long startTime = System.nanoTime();
 		rvns();

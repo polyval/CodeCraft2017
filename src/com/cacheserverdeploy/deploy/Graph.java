@@ -5,6 +5,8 @@ package com.cacheserverdeploy.deploy;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author JwZhou
@@ -22,6 +24,7 @@ public class Graph {
 	public static int serverCost = 0;
 	public static int[] clientVertexId;
 	public static int[] clientDemand;
+	public static Map<Integer, Integer> vertexToClient = new HashMap<Integer, Integer>();
 	// Do not use index to get node from here.
 	public static Node[] clientNodes;
 	// Adjacency lists;
@@ -134,6 +137,8 @@ public class Graph {
 			nodes[attachedVertexId].clientId = clientId;
 			nodes[attachedVertexId].demands = demand;
 			clientNodes[clientId] = nodes[attachedVertexId];
+			
+			vertexToClient.put(attachedVertexId, clientId);
 			
 			// For residual graph, add edges from client to super sink.
 			Edge edge = new Edge(attachedVertexId, resVertexNum - 1, 0, demand);
