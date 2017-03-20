@@ -3,10 +3,8 @@
  */
 package com.cacheserverdeploy.deploy;
 
-import java.beans.Visibility;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 
 import com.filetool.util.FileUtil;
@@ -27,7 +25,6 @@ public class Zkw {
 		int[] flowCost = new int[2];
 		
 		while (true) {
-			ArrayList<Integer> path = new ArrayList<Integer>();
 			temp = augment(source, source, sink, Integer.MAX_VALUE, dist, visited);
 			while (temp > 0) {
 				flow += temp;
@@ -202,7 +199,7 @@ public class Zkw {
 	}
 	
 	public static void main(String[] args) {
-		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\case4.txt", null);
+		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\case99.txt", null);
 		Graph.makeGraph(graphContent);
 //		
 		List<Integer> servers = new ArrayList<Integer>();
@@ -218,7 +215,7 @@ public class Zkw {
 		long startTime = System.nanoTime();
 		
 		List<Path> allPaths = new ArrayList<Path>();
-		System.out.println(Arrays.toString(getMinCostFlow(50, 51)));
+		System.out.println(Arrays.toString(getMinCostFlow(1000, 1001)));
 		allPaths = getPaths();
 		System.out.println(allPaths);
 		System.out.println(deepCheck(allPaths));
