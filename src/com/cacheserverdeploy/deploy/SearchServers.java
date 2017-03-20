@@ -28,11 +28,11 @@ public class SearchServers {
 	 */
 	public static void rvns() {
 		// Get initial Solution
-		for (int i : Graph.clientVertexId) {
-			servers.add(i);
-		}
-		cost = Graph.serverCost * Graph.clientVertexNum;
-		
+//		for (int i : Graph.clientVertexId) {
+//			servers.add(i);
+//		}
+//		cost = Graph.serverCost * Graph.clientVertexNum;
+//		
 		// Drop one
 		//      Local search
 		// Drop two and add one.
@@ -116,6 +116,49 @@ public class SearchServers {
 		}
 	}
 	
+	
+	public static void greedy() {
+		int totalFlow = 0;
+		List<Integer> newServers = new ArrayList<Integer>();
+		while (totalFlow < Graph.totalFlow) {
+			int bestCost = Integer.MAX_VALUE;
+			int bestFlow = 0;
+			int bestServer = -1;
+			for (int i = 0; i < Graph.vertexNum; i++) {
+				if (newServers.contains(i)) {
+					continue;
+				}
+				newServers.add(i);
+				
+				Zkw.clear();
+				Zkw.setSuperSource(newServers);
+				int[] flowCost = Zkw.getMinCostFlow(Graph.vertexNum, Graph.vertexNum + 1);
+				int curFlow = flowCost[0];
+				int curCost = flowCost[1];
+				
+				if (curFlow < bestFlow || curFlow == 0) {
+					newServers.remove(newServers.size() - 1);
+					continue;
+				}
+				
+				// curFlow >= bestFlow
+				if (curFlow > bestFlow || curCost <= bestCost) {
+					bestFlow = flowCost[0];
+					bestCost = flowCost[1];
+					bestServer = i;
+				}
+				
+				newServers.remove(newServers.size() - 1);
+			}
+			
+			newServers.add(bestServer);
+			totalFlow = bestFlow;
+			cost = bestCost + newServers.size() * Graph.serverCost;
+		}
+		servers = newServers;
+	}
+	
+	
 	/**
 	 * Gets new server combination.
 	 * 
@@ -144,10 +187,9 @@ public class SearchServers {
 		return newServers;
 	}
 	
-	public static List<Integer> getRandomServersFromNeighbor(int k) {
-		Random random = new Random();
+	public static List<Integer> getRandomServersFromNeighbor(int k, List<Integer> parentServers) {
 		
-		List<Integer> newServers = new ArrayList<Integer>(servers);
+		List<Integer> newServers = new ArrayList<Integer>(parentServers);
 		List<Integer> randoms = new ArrayList<Integer>();
 		
 		List<Edge> candidateEdges = new ArrayList<Edge>();
@@ -210,9 +252,8 @@ public class SearchServers {
 	public static boolean isBetter(List<Integer> newServers) {
 		Zkw.clear();
 		Zkw.setSuperSource(newServers);
-		
-		List<Path> allPaths = new ArrayList<Path>();
-		int[] flowCost = Zkw.getMinCostFlow(Graph.vertexNum, Graph.vertexNum + 1, allPaths);
+
+		int[] flowCost = Zkw.getMinCostFlow(Graph.vertexNum, Graph.vertexNum + 1);
 		int flow = flowCost[0];
 		int newCost = flowCost[1];
 		// Not feasible
@@ -229,17 +270,16 @@ public class SearchServers {
 		
 		newCost += newServers.size() * Graph.serverCost;
 		// Develop version.
-		if (AnalyseUtil.cost[newServers.size() - 1] == 0) {
-			AnalyseUtil.cost[newServers.size() - 1] = newCost;
-		}
-		else {
-			AnalyseUtil.cost[newServers.size() - 1] = Math.min(AnalyseUtil.cost[newServers.size() - 1], newCost);
-		}
+//		if (AnalyseUtil.cost[newServers.size() - 1] == 0) {
+//			AnalyseUtil.cost[newServers.size() - 1] = newCost;
+//		}
+//		else {
+//			AnalyseUtil.cost[newServers.size() - 1] = Math.min(AnalyseUtil.cost[newServers.size() - 1], newCost);
+//		}
 		 
 		if (newCost < cost) {
 			cost = newCost;
 			servers = newServers;
-			solution = allPaths;
 			return true;
 		}
 		return false;
@@ -249,6 +289,10 @@ public class SearchServers {
 		Graph.makeGraph(graphContent);
 		
 		rvns();
+		Zkw.clear();
+		Zkw.setSuperSource(servers);
+		Zkw.getMinCostFlow(Graph.vertexNum, Graph.vertexNum + 1);
+		
 		String[] res = new String[solution.size() + 2];
 		res[0] = String.valueOf(solution.size());
 		res[1] = "";
@@ -260,18 +304,23 @@ public class SearchServers {
 	}
 	
 	public static void main(String[] args) {
-		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\case.txt", null);
+		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\case98.txt", null);
 		Graph.makeGraph(graphContent);
 
 		long startTime = System.nanoTime();
+		greedy();
 		rvns();
-		System.out.println(solution);
 		System.out.println(servers);
+		Zkw.clear();
+		Zkw.setSuperSource(servers);
+		Zkw.getMinCostFlow(Graph.vertexNum, Graph.vertexNum + 1);
+		solution = Zkw.getPaths();
+		System.out.println(solution);
 		System.out.println(Zkw.deepCheck(solution));
 //		List<ArrayList<Integer>> allPaths = new ArrayList<ArrayList<Integer>>();
 		long endTime = System.nanoTime();
 		System.out.println((endTime - startTime) / 1000000 + "ms");
 		System.out.println(cost);
-		AnalyseUtil.saveTofile();
+//		AnalyseUtil.saveTofile();
 	}
 }

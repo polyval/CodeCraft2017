@@ -3,8 +3,10 @@
  */
 package com.cacheserverdeploy.deploy;
 
+import java.beans.Visibility;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 import com.filetool.util.FileUtil;
@@ -15,7 +17,7 @@ import com.filetool.util.FileUtil;
  */
 public class Zkw {
 	
-	public static int[] getMinCostFlow(int source, int sink, List<Path> allPaths) {
+	public static int[] getMinCostFlow(int source, int sink) {
 		int vertexNum = Graph.resVertexNum;
 		int[] dist = new int[vertexNum];
 		boolean[] visited = new boolean[vertexNum];
@@ -26,15 +28,12 @@ public class Zkw {
 		
 		while (true) {
 			ArrayList<Integer> path = new ArrayList<Integer>();
-			temp = augment(source, source, sink, Integer.MAX_VALUE, dist, visited, path);
+			temp = augment(source, source, sink, Integer.MAX_VALUE, dist, visited);
 			while (temp > 0) {
-				allPaths.add(new Path(new ArrayList<Integer>(path), temp));
-				path.clear();
-				
 				flow += temp;
 				cost += temp * dist[source];
 				Arrays.fill(visited, false);
-				temp = augment(source, source, sink, Integer.MAX_VALUE, dist, visited, path);
+				temp = augment(source, source, sink, Integer.MAX_VALUE, dist, visited);
 			}
 			
 			if (!lable(sink, dist, visited)) {
@@ -46,7 +45,7 @@ public class Zkw {
 		return flowCost;
 	}
 	
-	public static int augment(int u, int source, int sink, int flow, int[] dist, boolean[] visited, ArrayList<Integer> path) {
+	public static int augment(int u, int source, int sink, int flow, int[] dist, boolean[] visited) {
 		if (u == sink) {
 			return flow;
 		}
@@ -54,19 +53,11 @@ public class Zkw {
 		for (Edge e : Graph.resAdj[u]) {
 			int v = e.target;
 			if (e.residualFlow > 0 && !visited[v] && dist[v] + e.cost == dist[u]) {
-				if (!path.contains(u) && u != source) {
-					path.add(u);
-				}
-				int temp = augment(v, source, sink, Math.min(e.residualFlow, flow), dist, visited, path);
+				int temp = augment(v, source, sink, Math.min(e.residualFlow, flow), dist, visited);
 				if (temp > 0) {
 					e.residualFlow -= temp;
 					e.counterEdge.residualFlow += temp;
 					return temp;
-				}
-				else {
-					if (!path.isEmpty()) {
-						path.remove(path.size() - 1);
-					}
 				}
 			}
 		}
@@ -165,25 +156,73 @@ public class Zkw {
 		
 	}
 	
+	public static List<Path> getPaths() {
+		List<Path> paths = new ArrayList<Path>();
+		int sink = Graph.vertexNum + 1;
+		int source = Graph.vertexNum;
+		int totalFlow = 0;
+		boolean[] visited = new boolean[Graph.resVertexNum];
+		while (totalFlow < Graph.totalFlow) {
+			Arrays.fill(visited, false);
+			List<Edge> path = new ArrayList<Edge>();
+			totalFlow += dfs(source, sink, path, paths, visited);
+		}
+		return paths;
+	}
+	
+	public static int dfs(int u, int sink, List<Edge> path, List<Path> paths, boolean[] visited) {
+		if (u == sink) {
+			int flow = Integer.MAX_VALUE;
+			List<Integer> nodes = new ArrayList<Integer>();
+			for (Edge e : path) {
+				flow = Math.min(e.bandwidth - e.residualFlow, flow);
+				if (e.target != sink) {
+					nodes.add(e.target);
+				}
+			}
+			for (Edge e : path) {
+				e.residualFlow += flow;
+			}
+			paths.add(new Path(nodes, flow));
+			return flow;
+		}
+		visited[u] = true;
+		for (Edge edge : Graph.resAdj[u]) {
+			if (edge.isResidual || edge.bandwidth == edge.residualFlow || visited[edge.target]) {
+				continue;
+			}
+			path.add(edge);
+			int curFlow = dfs(edge.target, sink, path, paths, visited);
+			if (curFlow > 0) {
+				return curFlow;
+			}
+			path.remove(path.size() - 1);
+		}
+		return 0;
+	}
+	
 	public static void main(String[] args) {
-		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\case99.txt", null);
+		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\case4.txt", null);
 		Graph.makeGraph(graphContent);
 //		
 		List<Integer> servers = new ArrayList<Integer>();
+		servers.add(20);
+		servers.add(26);
 		servers.add(22);
-		servers.add(7);
-		servers.add(3);
+		servers.add(48);
 		servers.add(15);
-		servers.add(38);
+		servers.add(12);
+		servers.add(37);
 		
 		setSuperSource(servers);
 		long startTime = System.nanoTime();
 		
 		List<Path> allPaths = new ArrayList<Path>();
-		System.out.println(Arrays.toString(getMinCostFlow(1000, 1001, allPaths)));
+		System.out.println(Arrays.toString(getMinCostFlow(50, 51)));
+		allPaths = getPaths();
+		System.out.println(allPaths);
 		System.out.println(deepCheck(allPaths));
 		long endTime = System.nanoTime();
 		System.out.println((endTime - startTime) / 1000000 + "ms");
-		System.out.println(allPaths);
 	}
 }
