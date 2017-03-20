@@ -124,10 +124,8 @@ public class SearchServers {
 							k = 1;
 						}
 						List<Integer> preNewServers = getRandomServers(k, preServers);
-						Zkw.clear();
-						Zkw.setSuperSource(preNewServers);
 
-						int[] flowCost = Zkw.getMinCostFlow(Graph.vertexNum, Graph.vertexNum + 1);
+						int[] flowCost = Zkw.getFlowCostGivenServers(preNewServers);
 						int flow = flowCost[0];
 						int newCost = flowCost[1];
 						// Not feasible
@@ -262,10 +260,8 @@ public class SearchServers {
 	}
 	
 	public static boolean isBetter(List<Integer> newServers) {
-		Zkw.clear();
-		Zkw.setSuperSource(newServers);
 
-		int[] flowCost = Zkw.getMinCostFlow(Graph.vertexNum, Graph.vertexNum + 1);
+		int[] flowCost = Zkw.getFlowCostGivenServers(newServers);
 		int flow = flowCost[0];
 		int newCost = flowCost[1];
 		// Not feasible
@@ -308,9 +304,7 @@ public class SearchServers {
 		Graph.makeGraph(graphContent);
 		
 		rvns();
-		Zkw.clear();
-		Zkw.setSuperSource(servers);
-		Zkw.getMinCostFlow(Graph.vertexNum, Graph.vertexNum + 1);
+		Zkw.getFlowCostGivenServers(servers);
 		solution = Zkw.getPaths();
 		
 		String[] res = new String[solution.size() + 2];
@@ -324,7 +318,7 @@ public class SearchServers {
 	}
 	
 	public static void main(String[] args) {
-		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\case5.txt", null);
+		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\case0.txt", null);
 		Graph.makeGraph(graphContent);
 
 		long startTime = System.nanoTime();

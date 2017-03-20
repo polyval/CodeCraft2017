@@ -42,7 +42,7 @@ public class Zkw {
 		return flowCost;
 	}
 	
-	public static int augment(int u, int source, int sink, int flow, int[] dist, boolean[] visited) {
+	private static int augment(int u, int source, int sink, int flow, int[] dist, boolean[] visited) {
 		if (u == sink) {
 			return flow;
 		}
@@ -61,7 +61,7 @@ public class Zkw {
 		return 0;
 	}
 	
-	public static boolean lable(int sink, int[] dist, boolean[] visited) {
+	private static boolean lable(int sink, int[] dist, boolean[] visited) {
 		int tmp = Integer.MAX_VALUE;
 		for (int u = 0; u < dist.length; u++) {
 			if (!visited[u]) {
@@ -153,6 +153,12 @@ public class Zkw {
 		
 	}
 	
+	public static int[] getFlowCostGivenServers(List<Integer> servers) {
+		clear();
+		setSuperSource(servers);
+		return getMinCostFlow(Graph.vertexNum, Graph.vertexNum + 1);
+	}
+	
 	public static List<Path> getPaths() {
 		List<Path> paths = new ArrayList<Path>();
 		int sink = Graph.vertexNum + 1;
@@ -167,7 +173,7 @@ public class Zkw {
 		return paths;
 	}
 	
-	public static int dfs(int u, int sink, List<Edge> path, List<Path> paths, boolean[] visited) {
+	private static int dfs(int u, int sink, List<Edge> path, List<Path> paths, boolean[] visited) {
 		if (u == sink) {
 			int flow = Integer.MAX_VALUE;
 			List<Integer> nodes = new ArrayList<Integer>();
