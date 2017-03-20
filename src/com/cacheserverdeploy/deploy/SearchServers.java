@@ -116,49 +116,6 @@ public class SearchServers {
 		}
 	}
 	
-	
-	public static void greedy() {
-		int totalFlow = 0;
-		List<Integer> newServers = new ArrayList<Integer>();
-		while (totalFlow < Graph.totalFlow) {
-			int bestCost = Integer.MAX_VALUE;
-			int bestFlow = 0;
-			int bestServer = -1;
-			for (int i = 0; i < Graph.vertexNum; i++) {
-				if (newServers.contains(i)) {
-					continue;
-				}
-				newServers.add(i);
-				
-				Zkw.clear();
-				Zkw.setSuperSource(newServers);
-				int[] flowCost = Zkw.getMinCostFlow(Graph.vertexNum, Graph.vertexNum + 1);
-				int curFlow = flowCost[0];
-				int curCost = flowCost[1];
-				
-				if (curFlow < bestFlow || curFlow == 0) {
-					newServers.remove(newServers.size() - 1);
-					continue;
-				}
-				
-				// curFlow >= bestFlow
-				if (curFlow > bestFlow || curCost <= bestCost) {
-					bestFlow = flowCost[0];
-					bestCost = flowCost[1];
-					bestServer = i;
-				}
-				
-				newServers.remove(newServers.size() - 1);
-			}
-			
-			newServers.add(bestServer);
-			totalFlow = bestFlow;
-			cost = bestCost + newServers.size() * Graph.serverCost;
-		}
-		servers = newServers;
-	}
-	
-	
 	/**
 	 * Gets new server combination.
 	 * 
@@ -308,7 +265,6 @@ public class SearchServers {
 		Graph.makeGraph(graphContent);
 
 		long startTime = System.nanoTime();
-		greedy();
 		rvns();
 		System.out.println(servers);
 		Zkw.clear();
