@@ -169,6 +169,50 @@ public class SearchServers {
 		}
 	}
 	
+	public static void rvnsForLargeInstance() {
+		for (int i : Graph.clientVertexId) {
+			servers.add(i);
+		}
+		cost = Graph.serverCost * Graph.clientVertexNum;
+		
+		int dropK = 1;
+		int count = 0;
+		int k = 1;
+		while ((System.nanoTime() - startTime) / 1000000 < 89000) {
+			if (dropK >= servers.size()) {
+				dropK = 1;
+			}
+			
+			if (dropK(dropK)) {
+				System.out.println("new best cost by drop " + servers + " " + cost);
+				dropK++;
+				count = 0;
+				continue;
+			}
+
+			// Number of successive iterations with no improvement.
+			count++;
+			if (k >= Math.min(servers.size(), 4)) {
+				k = 1;
+			}
+			List<Integer> newServers = getRandomServers(k, servers);
+			if (isBetter(newServers)) {
+				count = 0;
+				System.out.println("new best cost by move " + k + "servers, new servers " + servers);
+				System.out.println("new best cost by move" + k + "servers, new servers " + cost);
+				continue;
+			}
+			else {
+				System.out.println("no best found " + k + "servers, new servers " + servers);
+				k++;
+			}
+			if (count > 1000) {
+				return;
+			}
+		}
+		
+	}
+	
 	/**
 	 * Gets new server combination.
 	 * 
@@ -176,7 +220,6 @@ public class SearchServers {
 	 * @return
 	 */
 	public static List<Integer> getRandomServers(int k, List<Integer> parentServers) {
-		Random random = new Random();
 		
 		List<Integer> newServers = new ArrayList<Integer>(parentServers);
 		List<Integer> randoms = new ArrayList<Integer>();
@@ -309,6 +352,26 @@ public class SearchServers {
 		return false;
 	}
 	
+	public static int getCurServersNumber() {
+		int res = 0;
+		for (Edge e : Graph.resAdj[Graph.vertexNum]) {
+			if (e.residualFlow < Integer.MAX_VALUE) {
+				res++;
+			}
+		}
+		return res;
+	}
+	
+	public static List<Integer> getCurServers() {
+		List<Integer> curServers = new ArrayList<Integer>();
+		for (Edge e : Graph.resAdj[Graph.vertexNum]) {
+			if (e.residualFlow < Integer.MAX_VALUE) {
+				curServers.add(e.target);
+			}
+		}
+		return curServers;
+	} 
+	
 	public static String[] getResults(String[] graphContent) {
 		Graph.makeGraph(graphContent);
 		
@@ -327,11 +390,12 @@ public class SearchServers {
 	}
 	
 	public static void main(String[] args) {
-		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\case99.txt", null);
+		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\case98.txt", null);
 		Graph.makeGraph(graphContent);
 
 		long startTime = System.nanoTime();
-		rvns();
+//		rvns();
+		rvnsForLargeInstance();
 		System.out.println(servers);
 		Zkw.clear();
 		Zkw.setSuperSource(servers);
