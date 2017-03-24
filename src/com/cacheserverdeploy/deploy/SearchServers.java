@@ -5,7 +5,6 @@ package com.cacheserverdeploy.deploy;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
@@ -22,7 +21,6 @@ public class SearchServers {
 	public static List<Integer> servers = new ArrayList<Integer>();
 	public static Random random = new Random();
 	public static long startTime = System.nanoTime();
-	public static LinkedList<List<Integer>> history = new LinkedList<List<Integer>>();
 	
 	/**
 	 * Reduced VNS.
@@ -86,7 +84,7 @@ public class SearchServers {
 			}
 			
 			if (dropK(dropK)) {
-				System.out.println("new best cost by drop " + servers + " " + cost);
+				System.out.println("new best cost by drop " + dropK + servers + " " + cost);
 				dropK++;
 				count = 0;
 				continue;
@@ -108,7 +106,7 @@ public class SearchServers {
 				System.out.println("no best found " + k + "servers, new servers " + servers);
 				k++;
 			}
-			if (count > 1000) {
+			if (count > 500) {
 				return;
 			}
 		}
@@ -223,7 +221,6 @@ public class SearchServers {
 			return false;
 		}
 		
-		List<Integer> oldServers = new ArrayList<Integer>(newServers);
 		newServers.clear();
 		for (Edge e : Graph.resAdj[Graph.vertexNum]) {
 			if (e.residualFlow < Integer.MAX_VALUE) {
@@ -236,12 +233,6 @@ public class SearchServers {
 		if (newCost < cost) {
 			cost = newCost;
 			servers = newServers;
-			if (oldServers.size() < Graph.clientVertexNum && oldServers.size() > newServers.size()) {
-				while (history.size() > 3) {
-					history.removeLast();
-				}
-				history.push(oldServers);
-			}
 			return true;
 		}
 		return false;
@@ -285,7 +276,7 @@ public class SearchServers {
 	}
 	
 	public static void main(String[] args) {
-		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\case0.txt", null);
+		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\2\\case8.txt", null);
 		Graph.makeGraph(graphContent);
 
 		long startTime = System.nanoTime();
