@@ -1,8 +1,10 @@
 package com.cacheserverdeploy.deploy;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 import com.filetool.util.FileUtil;
 
@@ -16,7 +18,7 @@ public class SimulatedAnnealing {
 
 	public static List<Integer> bestServers = new ArrayList<Integer>();
 	
-	public static Random random = new Random();
+	public static Random random = new Random(System.currentTimeMillis());
 	
 	
 	
@@ -25,8 +27,8 @@ public class SimulatedAnnealing {
 			bestServers.add(i);
 		}
 		
-		temper = Graph.serverCost * Graph.clientVertexNum;
-		bestCost = temper;
+		bestCost = Graph.serverCost * Graph.clientVertexNum;
+		temper = bestCost;
 	}
 	
 	public static void simulatedAnnealing(){
@@ -43,32 +45,18 @@ public class SimulatedAnnealing {
 		double delta;
 		curCost = (int) bestCost;
 		
-//		while (true) {
-//			newServers = new ArrayList<Integer>(dropOneServers(curServers));
-//			System.out.println("the new servers location:" + newServers);
-//			newCost = getAllCost(newServers);
-//			
-//			if (newCost < curCost) {
-//				curServers = new ArrayList<Integer>(newServers);
-//				bestServers = new ArrayList<Integer>(newServers);
-//				curCost = newCost;
-//				bestCost = curCost;
-//				
-//				System.out.println("the best servers location" + curServers);
-//				System.out.println("the best all cost:" + curCost);
-//				continue;
+		int k = 1;
+		int count = 0;
+		while ((System.nanoTime() - startTime) / 1000000 < 89000 && temper > 0.00000001) {
+//			if (k >= 3) {
+//				k = 1;
 //			}
-//			else {
-//				break;
-//			}
-//		}
-
-		while ((System.nanoTime() - startTime) / 1000000 < 89000 && temper > 0.000001) {
 			newServers = SearchServers.getRandomServers(1, curServers);
 			newCost = getAllCost(newServers);
 			delta = newCost - curCost;
 			
 			if (delta < 0.0) {
+//				k = 1;
 				curServers = SearchServers.getCurServers();
 				curCost = newCost;
 		
@@ -77,7 +65,7 @@ public class SimulatedAnnealing {
 			}
 			else {
 				double rnd = (double) (Math.random());
-				double p = Math.exp(-delta / temper) / 5;
+				double p = Math.exp(-delta / temper) / curServers.size();
 				if(p > rnd) {
 					curServers = SearchServers.getCurServers();
 					curCost = newCost;
@@ -85,25 +73,101 @@ public class SimulatedAnnealing {
 					System.out.println("current servers location" + curServers);
 					System.out.println("current cost:" + curCost);
 				}
+//				else {
+//					k++;
+//				}
 			}
 
 
 			if (newCost < bestCost) {
+				count = 0;
 				bestServers = new ArrayList<Integer>(newServers);
 				bestCost = newCost;
-				
 				System.out.println("the best servers location" + bestServers);
 				System.out.println("the best all cost:" + bestCost);
 			}
+			else {
+				count++;
+			}
 			
+			if (count > 50) {
+				temper *= (1 + COOLINGRATE);
+				count = 0;
+			}
 			temper *= COOLINGRATE;		
 		}
 	}
-
+	
+	public static void move() {
+		initialize();
+		List<Integer> curServers = new ArrayList<Integer>();
+		int count = 0;
+		int newCost = 0;
+		while ((System.nanoTime() - startTime) / 1000000 < 88500) {
+			if (count <= 50) {
+				curServers = SearchServers.getRandomServers(1, bestServers);
+			}
+			else {
+				for (int i = 0; i < bestServers.size(); i++) {
+					curServers = new ArrayList<Integer>(bestServers);
+					curServers.remove(i);
+					newCost = getAllCost(curServers);
+					if (newCost < bestCost) {
+						bestServers = SearchServers.getCurServers();
+						bestCost = newCost;
+						System.out.println("the best servers location by dropping" + bestServers);
+						System.out.println("the best all cost by dropping:" + bestCost);
+						break;
+					}
+				}
+				count = 0;
+				continue;
+			}
+			newCost = getAllCost(curServers);
+			if (newCost < bestCost) {
+				bestServers = SearchServers.getCurServers();
+				bestCost = newCost;
+				System.out.println("the best servers location" + bestServers);
+				System.out.println("the best all cost:" + bestCost);
+			}
+			if (curServers.size() == bestServers.size()) {
+				count++;
+			}
+			else {
+				count = 0;
+			}
+		}
+	}
+	
+	public static void moverefresh() {
+		initialize();
+		List<Integer> curServers = new ArrayList<Integer>();
+		int count = 0;
+		int newCost = 0;
+		List<Integer> startServers = new ArrayList<Integer>(bestServers);
+		while ((System.nanoTime() - startTime) / 1000000 < 88500) {
+			count++;
+			if (count % 10 == 0) {
+				startServers = bestServers;
+			}
+			curServers = SearchServers.getRandomServers(1, startServers);
+		
+			newCost = getAllCost(curServers);
+			if (newCost < bestCost) {
+				bestServers = SearchServers.getCurServers();
+				bestCost = newCost;
+				System.out.println("the best servers location" + bestServers);
+				System.out.println("the best all cost:" + bestCost);
+			}
+		}
+	}
+	
 	public static int getAllCost(List<Integer> parentServers)
 	{
 		List<Integer> newServers = new ArrayList<Integer>(parentServers);
+		long start = System.nanoTime();
 		int[] flowCost = Zkw.getFlowCostGivenServers(newServers);
+		System.out.println((System.nanoTime() - start) / 1000000 + "ms");
 		int flow = flowCost[0];
 		int cost = flowCost[1];
 		
@@ -118,19 +182,106 @@ public class SimulatedAnnealing {
 			}
 		}
 		
-		parentServers=new ArrayList<Integer>(newServers);
 		cost += newServers.size() * Graph.serverCost;
 		return cost;
 		
 	}
 	
+	public static List<Integer> dropTwoAddOne(List<Integer> parentServers) {
+		List<Integer> newServers = new ArrayList<Integer>(parentServers);
+		// Get indices to drop.
+		newServers.remove(random.nextInt(newServers.size()));
+		newServers.remove(random.nextInt(newServers.size()));
+		
+		int addServer = random.nextInt(Graph.vertexNum);
+		while (parentServers.contains(addServer)) {
+			addServer = random.nextInt(Graph.vertexNum);
+		}
+		
+		// Construct new servers.
+		newServers.add(addServer);
+		
+		return newServers;
+	}
+	
+	public static String[] getResults(String[] graphContent) {
+		Graph.makeGraph(graphContent);
+		
+		move();
+		Zkw.getFlowCostGivenServers(bestServers);
+		solution = Zkw.getPaths();
+		
+		String[] res = new String[solution.size() + 2];
+		res[0] = String.valueOf(solution.size());
+		res[1] = "";
+		for (int i = 2; i < res.length; i++) {
+			res[i] = solution.get(i - 2).toString(); 
+		}
+		
+		return res;
+	}
+	
+	public static void drop() {
+		initialize();
+		List<Integer> newServers = new ArrayList<Integer>();
+		while ((System.nanoTime() - startTime) / 1000000 < 88500) {
+			newServers = new ArrayList<Integer>(bestServers);
+			newServers.remove(random.nextInt(newServers.size()));
+			int newCost = getAllCost(newServers);
+			if (newCost < bestCost) {
+				bestCost = newCost;
+				bestServers = new ArrayList<Integer>(newServers);
+				System.out.println("the best servers location" + bestServers);
+				System.out.println("the best all cost:" + bestCost);
+			}
+		}
+	}
+	
+	public static void dropUntil() {
+		initialize();
+		List<Integer> newServers = new ArrayList<Integer>();
+		Set<Integer> tabu = new HashSet<Integer>();
+		int removeIndex = 0;
+		while ((System.nanoTime() - startTime) / 1000000 < 88500) {
+			newServers = new ArrayList<Integer>(bestServers);
+			for (int i = 0; i < newServers.size(); i++) {
+				removeIndex = random.nextInt(newServers.size());
+				if (tabu.contains(newServers.get(removeIndex))) {
+					continue;
+				}
+				break;
+			}
+			
+			if (tabu.contains(newServers.get(removeIndex))) {
+				break;
+			}
+			
+			int removedServer = newServers.get(removeIndex);
+			newServers.remove(removeIndex);
+			int newCost = getAllCost(newServers);
+			if (newCost < bestCost) {
+				bestCost = newCost;
+				bestServers = new ArrayList<Integer>(newServers);
+				System.out.println("the best servers location" + bestServers);
+				System.out.println("the best all cost:" + bestCost);
+			}
+			else {
+				tabu.add(removedServer);
+			}
+		}
+	}
+	
 	public static void main(String[] args) {
-		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\1\\case8.txt", null);
+		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\2\\case6.txt", null);
 		Graph.makeGraph(graphContent);
 
 		long startTime = System.nanoTime();
-		simulatedAnnealing();
+//		simulatedAnnealing();
+//		move();
+//		moverefresh(); 
+		dropUntil();
 		System.out.println(bestServers);
+		System.out.println(bestServers.size());
 		Zkw.clear();
 		Zkw.setSuperSource(bestServers);
 		Zkw.getMinCostFlow(Graph.vertexNum, Graph.vertexNum + 1);
