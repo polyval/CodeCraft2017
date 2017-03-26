@@ -78,7 +78,7 @@ public class SearchServers {
 		int dropK = 1;
 		int count = 0;
 		int k = 1;
-		while ((System.nanoTime() - startTime) / 1000000 < 89000) {
+		while ((System.nanoTime() - startTime) / 1000000 < 88500) {
 			if (dropK >= servers.size()) {
 				dropK = 1;
 			}
@@ -261,7 +261,12 @@ public class SearchServers {
 	public static String[] getResults(String[] graphContent) {
 		Graph.makeGraph(graphContent);
 		
-		rvns();
+		if (Graph.vertexNum > 500) {
+			rvnsForLargeInstance();
+		}
+		else {
+			rvns();
+		}
 		Zkw.getFlowCostGivenServers(servers);
 		solution = Zkw.getPaths();
 		
@@ -276,12 +281,18 @@ public class SearchServers {
 	}
 	
 	public static void main(String[] args) {
-		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\2\\case8.txt", null);
+		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\2\\case4.txt", null);
 		Graph.makeGraph(graphContent);
 
 		long startTime = System.nanoTime();
-		rvns();
-//		rvnsForLargeInstance();
+//		rvns();
+		rvnsForLargeInstance();
+//		if (Graph.vertexNum > 500) {
+//			rvnsForLargeInstance();
+//		}
+//		else {
+//			rvns();
+//		}
 		System.out.println(servers);
 		Zkw.clear();
 		Zkw.setSuperSource(servers);
