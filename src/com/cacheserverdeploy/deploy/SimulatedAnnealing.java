@@ -304,6 +304,7 @@ public class SimulatedAnnealing {
 		bestCost = Graph.serverCost * Graph.clientVertexNum;
 		int i = 0;
 		int newCost = 0;
+		// Drop
 		while (i < bestServers.size()) {
 			int removedServer = bestServers.get(i);
 			bestServers.remove(i);
@@ -318,10 +319,59 @@ public class SimulatedAnnealing {
 				i++;
 			}
 		}
+		// Move
+		i = 0;
+		int j = 1;
+		List<Integer> neighbor = new ArrayList<Integer>();
+		boolean findBetter = false;
+		while (i < bestServers.size() - 1) {
+			int firstServer = bestServers.get(i);
+			int secondServer = bestServers.get(i + j);
+			if (!neighbor.isEmpty()) {
+				neighbor.clear();
+			}
+			addNeighbor(firstServer, neighbor);
+			addNeighbor(secondServer, neighbor);
+			
+			List<Integer> newServers = new ArrayList<Integer>(bestServers);
+			newServers.remove(i);
+			newServers.remove(i + j - 1);
+			findBetter = false;
+			for (int server : neighbor) {
+				if (server != firstServer && server != secondServer) {
+					newServers.add(server);
+					newCost = getAllCost(newServers);
+					if (newCost < bestCost) {
+						findBetter = true;
+						bestCost = newCost;
+						bestServers = new ArrayList<Integer>(newServers);
+						System.out.println("new best servers location by moving" + bestServers);
+						System.out.println("new best cost:" + bestCost);
+						break;
+					}
+					newServers.remove(newServers.size() - 1);
+				}
+			}
+			
+			j++;
+			if (findBetter || i + j == bestServers.size() - 1) {
+				i++;
+				j = 1;
+			}
+		}
+		
+	}
+	
+	public static void addNeighbor(int server, List<Integer> neighbor) {
+		for (Edge e : Graph.adj[server]) {
+			if (!neighbor.contains(e.target)) {
+				neighbor.add(e.target);
+			}
+		}
 	}
 	
 	public static void main(String[] args) {
-		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\0\\case8.txt", null);
+		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\0\\case4.txt", null);
 		Graph.makeGraph(graphContent);
 
 		long startTime = System.nanoTime();
