@@ -1,6 +1,7 @@
 package com.cacheserverdeploy.deploy;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
@@ -262,24 +263,73 @@ public class SimulatedAnnealing {
 			if (newCost < bestCost) {
 				bestCost = newCost;
 				bestServers = new ArrayList<Integer>(newServers);
-				System.out.println("the best servers location" + bestServers);
-				System.out.println("the best all cost:" + bestCost);
+				System.out.println("new best servers location by dropping" + bestServers);
+				System.out.println("new best cost:" + bestCost);
 			}
 			else {
 				tabu.add(removedServer);
 			}
 		}
+		
+		int nonImprovedCount = 0;
+		while ((System.nanoTime() - startTime) / 1000000 < 88500) {
+			nonImprovedCount++;
+			
+			newServers = SearchServers.getRandomServers(1, bestServers);
+			int newCost = getAllCost(newServers);
+			if (newCost < bestCost) {
+				nonImprovedCount = 0;
+				bestCost = newCost;
+				bestServers = SearchServers.getCurServers();
+				System.out.println("new best servers location by moving" + bestServers);
+				System.out.println("new best cost:" + bestCost);
+				continue;
+			}
+			
+			if (nonImprovedCount > 1000) {
+				break;
+			}
+		}
+	}
+	
+	public static void dropDeterministic() {
+		Client[] clients = new Client[Graph.clientVertexNum];
+		for (int i = 0; i < Graph.clientVertexNum; i++) {
+			clients[i] = new Client(Graph.clientVertexId[i], Graph.clientDemand[i]);
+		}
+		Arrays.sort(clients);
+		for (Client client : clients) {
+			bestServers.add(client.vertexId);
+		}
+		bestCost = Graph.serverCost * Graph.clientVertexNum;
+		int i = 0;
+		int newCost = 0;
+		while (i < bestServers.size()) {
+			int removedServer = bestServers.get(i);
+			bestServers.remove(i);
+			newCost = getAllCost(bestServers);
+			if (newCost < bestCost) {
+				bestCost = newCost;
+				System.out.println("new best servers location by dropping" + bestServers);
+				System.out.println("new best cost:" + bestCost);
+			}
+			else {
+				bestServers.add(i, removedServer);
+				i++;
+			}
+		}
 	}
 	
 	public static void main(String[] args) {
-		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\2\\case6.txt", null);
+		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\0\\case8.txt", null);
 		Graph.makeGraph(graphContent);
 
 		long startTime = System.nanoTime();
 //		simulatedAnnealing();
 //		move();
 //		moverefresh(); 
-		dropUntil();
+//		dropUntil();
+		dropDeterministic();
 		System.out.println(bestServers);
 		System.out.println(bestServers.size());
 		Zkw.clear();
