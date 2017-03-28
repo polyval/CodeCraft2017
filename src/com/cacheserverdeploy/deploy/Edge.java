@@ -11,7 +11,7 @@ public class Edge implements Comparable<Edge> {
 	
 	public final int source;
 	public final int target;
-	public final int cost;
+	public int cost;
 	public int bandwidth;
 	
 	// For minimum cost flow.
