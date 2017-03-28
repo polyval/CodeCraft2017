@@ -145,29 +145,6 @@ public class SimulatedAnnealing {
 		}
 	}
 	
-	public static void moverefresh() {
-		initialize();
-		List<Integer> curServers = new ArrayList<Integer>();
-		int count = 0;
-		int newCost = 0;
-		List<Integer> startServers = new ArrayList<Integer>(bestServers);
-		while ((System.nanoTime() - startTime) / 1000000 < 88500) {
-			count++;
-			if (count % 10 == 0) {
-				startServers = bestServers;
-			}
-			curServers = SearchServers.getRandomServers(1, startServers);
-		
-			newCost = getAllCost(curServers);
-			if (newCost < bestCost) {
-				bestServers = SearchServers.getCurServers();
-				bestCost = newCost;
-				System.out.println("the best servers location" + bestServers);
-				System.out.println("the best all cost:" + bestCost);
-			}
-		}
-	}
-	
 	public static int getAllCost(List<Integer> parentServers)
 	{
 		List<Integer> newServers = new ArrayList<Integer>(parentServers);
@@ -191,23 +168,6 @@ public class SimulatedAnnealing {
 		cost += newServers.size() * Graph.serverCost;
 		return cost;
 		
-	}
-	
-	public static List<Integer> dropTwoAddOne(List<Integer> parentServers) {
-		List<Integer> newServers = new ArrayList<Integer>(parentServers);
-		// Get indices to drop.
-		newServers.remove(random.nextInt(newServers.size()));
-		newServers.remove(random.nextInt(newServers.size()));
-		
-		int addServer = random.nextInt(Graph.vertexNum);
-		while (parentServers.contains(addServer)) {
-			addServer = random.nextInt(Graph.vertexNum);
-		}
-		
-		// Construct new servers.
-		newServers.add(addServer);
-		
-		return newServers;
 	}
 	
 	public static List<Integer> dropTAddK(List<Integer> parentServers, int t, int k) {
@@ -246,76 +206,6 @@ public class SimulatedAnnealing {
 		}
 		
 		return res;
-	}
-	
-	public static void drop() {
-		initialize();
-		List<Integer> newServers = new ArrayList<Integer>();
-		while ((System.nanoTime() - startTime) / 1000000 < 88500) {
-			newServers = new ArrayList<Integer>(bestServers);
-			newServers.remove(random.nextInt(newServers.size()));
-			int newCost = getAllCost(newServers);
-			if (newCost < bestCost) {
-				bestCost = newCost;
-				bestServers = new ArrayList<Integer>(newServers);
-				System.out.println("the best servers location" + bestServers);
-				System.out.println("the best all cost:" + bestCost);
-			}
-		}
-	}
-	
-	public static void dropUntil() {
-		initialize();
-		List<Integer> newServers = new ArrayList<Integer>();
-		Set<Integer> tabu = new HashSet<Integer>();
-		int removeIndex = 0;
-		while ((System.nanoTime() - startTime) / 1000000 < 88500) {
-			newServers = new ArrayList<Integer>(bestServers);
-			for (int i = 0; i < newServers.size(); i++) {
-				removeIndex = random.nextInt(newServers.size());
-				if (tabu.contains(newServers.get(removeIndex))) {
-					continue;
-				}
-				break;
-			}
-			
-			if (tabu.contains(newServers.get(removeIndex))) {
-				break;
-			}
-			
-			int removedServer = newServers.get(removeIndex);
-			newServers.remove(removeIndex);
-			int newCost = getAllCost(newServers);
-			if (newCost < bestCost) {
-				bestCost = newCost;
-				bestServers = new ArrayList<Integer>(newServers);
-				System.out.println("new best servers location by dropping" + bestServers);
-				System.out.println("new best cost:" + bestCost);
-			}
-			else {
-				tabu.add(removedServer);
-			}
-		}
-		
-		int nonImprovedCount = 0;
-		while ((System.nanoTime() - startTime) / 1000000 < 88500) {
-			nonImprovedCount++;
-			
-			newServers = SearchServers.getRandomServers(1, bestServers);
-			int newCost = getAllCost(newServers);
-			if (newCost < bestCost) {
-				nonImprovedCount = 0;
-				bestCost = newCost;
-				bestServers = SearchServers.getCurServers();
-				System.out.println("new best servers location by moving" + bestServers);
-				System.out.println("new best cost:" + bestCost);
-				continue;
-			}
-			
-			if (nonImprovedCount > 1000) {
-				break;
-			}
-		}
 	}
 	
 	public static void dropDeterministic() {
@@ -442,7 +332,7 @@ public class SimulatedAnnealing {
 	}
 	
 	public static void main(String[] args) {
-		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\2\\case8.txt", null);
+		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\0\\case8.txt", null);
 		Graph.makeGraph(graphContent);
 
 		long startTime = System.nanoTime();
