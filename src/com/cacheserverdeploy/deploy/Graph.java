@@ -25,10 +25,6 @@ public class Graph {
 	// Adjacency lists;
 	public static ArrayList<Edge>[] adj;
 	
-	// Used to reset the data.
- 	public static int[][] edgeWeight;
-	public static int[][] edgeBandwidth;
-	
 	// Residual Graph
 	public static ArrayList<Edge>[] resAdj;
 	public static int resVertexNum = 0;
@@ -63,8 +59,6 @@ public class Graph {
 		// Initialize.
 		clientVertexId = new int[clientVertexNum];
 		clientDemand = new int[clientVertexNum];
-		edgeWeight = new int[vertexNum][vertexNum];
-		edgeBandwidth = new int[vertexNum][vertexNum];
 		
 		// Read edges
 		for (int i = 4; i < edgeNum + 4; i++) {
@@ -101,12 +95,6 @@ public class Graph {
 			resAdj[start].add(resEdgeOpposite);
 			resAdj[end].add(edgeOpposite);
 			resAdj[end].add(resEdgeOne);
-			
-			
-			edgeWeight[start][end] = cost;
-			edgeWeight[end][start] = cost;
-			edgeBandwidth[start][end] = bandwidth;
-			edgeBandwidth[end][start] = bandwidth;
 		}
 		
 		// Read clients

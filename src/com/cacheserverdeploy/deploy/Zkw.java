@@ -17,20 +17,19 @@ import com.filetool.util.FileUtil;
 public class Zkw {
 	
 	public static int totalCost = 0;
-	public static int pathCost = 0;
 	public static int totalFlow = 0;
-	public static int sink;
-	public static int source;
-	public static boolean[] visited;
+	private static int pathCost = 0;
+	private static int sink;
+	private static int source;
+	private static boolean[] visited;
 	
-	public static int[] getMinCostFlow() {
+	public static void computeMinCostFlow() {
 		totalCost = 0;
 		totalFlow = 0;
 		pathCost = 0;
 		source = Graph.vertexNum;
 		sink = Graph.vertexNum + 1;
 		visited = new boolean[Graph.resVertexNum];
-		int[] flowCost = new int[2];
 		
 		while (lable()) {
 			Arrays.fill(visited, false);
@@ -38,10 +37,6 @@ public class Zkw {
 				Arrays.fill(visited, false);
 			}
 		}
-		
-		flowCost[0] = totalFlow;
-		flowCost[1] = totalCost;
-		return flowCost;
 	}
 	
 	private static int augment(int u, int flow) {
@@ -157,38 +152,10 @@ public class Zkw {
 		}
 	}
 	
-	public static boolean deepCheck(List<Path> solution) {
-		int[][] edgesBandwidth = new int[Graph.vertexNum][Graph.vertexNum];
-		int[] demands = new int[Graph.clientVertexNum];
-		for (Path path : solution) {
-			demands[path.clientId] += path.flow;
-			for (int i = 0; i < path.nodes.size() - 1; i++) {
-				edgesBandwidth[path.nodes.get(i)][path.nodes.get(i+1)] += path.flow;
-			}
-		}
-		
-		for (int i = 0; i < Graph.clientVertexNum; i++) {
-			if (demands[i] != Graph.clientDemand[i]) {
-				return false;
-			}
-		}
-		
-		for (int i = 0; i < Graph.vertexNum; i++) {
-			for (int j = 0; j < Graph.vertexNum; j++) {
-				if (edgesBandwidth[i][j] > Graph.edgeBandwidth[i][j]) {
-					return false;
-				}
-			}
-		}
-		
-		return true;
-		
-	}
-	
-	public static int[] getFlowCostGivenServers(List<Integer> servers) {
+	public static void computeFlowCostGivenServers(List<Integer> servers) {
 		clear();
 		setSuperSource(servers);
-		return getMinCostFlow();
+		computeMinCostFlow();
 	}
 	
 	public static List<Path> getPaths() {
@@ -250,8 +217,6 @@ public class Zkw {
 		setSuperSource(servers);
 		long startTime = System.nanoTime();
 		
-		System.out.println(Arrays.toString(getMinCostFlow()));
-//		System.out.println(deepCheck(allPaths));
 		long endTime = System.nanoTime();
 		System.out.println((endTime - startTime) / 1000000);
 	}

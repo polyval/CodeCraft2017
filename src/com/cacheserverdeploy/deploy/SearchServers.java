@@ -8,8 +8,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-import com.filetool.util.FileUtil;
-
 /**
  * @author JwZhou
  *
@@ -179,13 +177,6 @@ public class SearchServers {
 		return isBetter(newServers);
 	}
 	
-	public static boolean dropOne(int dropIndex) {
-		List<Integer> newServers = new ArrayList<Integer>(servers);
-		newServers.remove(dropIndex);
-		
-		return isBetter(newServers);
-	}
-	
 	public static boolean dropK(int k) {
 		List<Integer> newServers = new ArrayList<Integer>(servers);
 		for (int i = 0; i < k; i++) {
@@ -194,30 +185,12 @@ public class SearchServers {
 		return isBetter(newServers);
 	}
 	
-	public static boolean dropTwoAddOne() {
-		List<Integer> newServers = new ArrayList<Integer>(servers);
-		// Get indices to drop.
-		newServers.remove(random.nextInt(newServers.size()));
-		newServers.remove(random.nextInt(newServers.size()));
-		
-		int addServer = random.nextInt(Graph.vertexNum);
-		while (servers.contains(addServer)) {
-			addServer = random.nextInt(Graph.vertexNum);
-		}
-		
-		// Construct new servers.
-		newServers.add(addServer);
-		
-		return isBetter(newServers);
-	}
-	
 	public static boolean isBetter(List<Integer> newServers) {
 
-		int[] flowCost = Zkw.getFlowCostGivenServers(newServers);
-		int flow = flowCost[0];
-		int newCost = flowCost[1];
+		Zkw.computeFlowCostGivenServers(newServers);
+
 		// Not feasible
-		if (flow < Graph.totalFlow) {
+		if (Zkw.totalFlow < Graph.totalFlow) {
 			return false;
 		}
 		
@@ -228,10 +201,10 @@ public class SearchServers {
 			}
 		}
 		
-		newCost += newServers.size() * Graph.serverCost;
+		Zkw.totalCost += newServers.size() * Graph.serverCost;
 		 
-		if (newCost < cost) {
-			cost = newCost;
+		if (Zkw.totalCost < cost) {
+			cost = Zkw.totalCost;
 			servers = newServers;
 			return true;
 		}
@@ -257,53 +230,4 @@ public class SearchServers {
 		}
 		return curServers;
 	} 
-	
-	public static String[] getResults(String[] graphContent) {
-		Graph.makeGraph(graphContent);
-		
-		if (Graph.vertexNum > 500) {
-			rvnsForLargeInstance();
-		}
-		else {
-			rvns();
-		}
-		Zkw.getFlowCostGivenServers(servers);
-		solution = Zkw.getPaths();
-		
-		String[] res = new String[solution.size() + 2];
-		res[0] = String.valueOf(solution.size());
-		res[1] = "";
-		for (int i = 2; i < res.length; i++) {
-			res[i] = solution.get(i - 2).toString(); 
-		}
-		
-		return res;
-	}
-	
-	public static void main(String[] args) {
-		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\2\\case4.txt", null);
-		Graph.makeGraph(graphContent);
-
-		long startTime = System.nanoTime();
-//		rvns();
-		rvnsForLargeInstance();
-//		if (Graph.vertexNum > 500) {
-//			rvnsForLargeInstance();
-//		}
-//		else {
-//			rvns();
-//		}
-		System.out.println(servers);
-		Zkw.clear();
-		Zkw.setSuperSource(servers);
-		Zkw.getMinCostFlow();
-		solution = Zkw.getPaths();
-		System.out.println(solution);
-		System.out.println(Zkw.deepCheck(solution));
-//		List<ArrayList<Integer>> allPaths = new ArrayList<ArrayList<Integer>>();
-		long endTime = System.nanoTime();
-		System.out.println((endTime - startTime) / 1000000 + "ms");
-		System.out.println(cost);
-//		AnalyseUtil.saveTofile();
-	}
 }
