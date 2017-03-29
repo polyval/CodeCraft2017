@@ -174,7 +174,8 @@ public class SimulatedAnnealing {
 			}
 		}
 		// Move
-		reintroduceDroppedServers(removed, serverIndex);
+//		reintroduceDroppedServers(removed, serverIndex);
+		addDroppedServers(removed);
 	}
 	
 	
@@ -218,23 +219,25 @@ public class SimulatedAnnealing {
 		reintroduceDroppedServers(removed, serverIndex);
 	}
 	
-	public static void reintroduceDroppedServers(List<Integer> removed, Map<Integer, Integer> serverIndex) {
-		List<Client> removedServers = new ArrayList<Client>();
-		for (int removedServer : removed) {
-			removedServers.add(Client.getClient(removedServer));
-		}
-		Collections.sort(removedServers, new Comparator<Client>() {
-
-			@Override
-			public int compare(Client o1, Client o2) {
-				return o2.getOutput() - o1.getOutput();
+	public static void addDroppedServers(List<Integer> removed) {
+		sortRemovedServers(removed);
+		
+		for (int server : removed) {
+			bestServers.add(server);
+			int newCost = getAllCost(bestServers);
+			if (newCost < bestCost) {
+				bestCost = newCost;
+				System.out.println("new best servers location by adding" + bestServers);
+				System.out.println("new best cost:" + bestCost);
 			}
-			
-		});
-		removed.clear();
-		for (int j = 1; j < removedServers.size(); j++) {
-			removed.add(removedServers.get(j).vertexId);
+			else {
+				bestServers.remove(bestServers.size() - 1);
+			}
 		}
+	}
+	
+	public static void reintroduceDroppedServers(List<Integer> removed, Map<Integer, Integer> serverIndex) {
+		sortRemovedServers(removed);
 		
 		for (int server : removed) {
 			if ((System.nanoTime() - startTime) / 1000000 > 88500) {
@@ -266,8 +269,27 @@ public class SimulatedAnnealing {
 		}
 	}
 	
+	public static void sortRemovedServers(List<Integer> removed) {
+		List<Client> removedServers = new ArrayList<Client>();
+		for (int removedServer : removed) {
+			removedServers.add(Client.getClient(removedServer));
+		}
+		Collections.sort(removedServers, new Comparator<Client>() {
+
+			@Override
+			public int compare(Client o1, Client o2) {
+				return o2.getOutput() - o1.getOutput();
+			}
+			
+		});
+		removed.clear();
+		for (int j = 1; j < removedServers.size(); j++) {
+			removed.add(removedServers.get(j).vertexId);
+		}
+	}
+	
 	public static void main(String[] args) {
-		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\2\\case7.txt", null);
+		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\0\\case7.txt", null);
 		Graph.makeGraph(graphContent);
 
 		long startTime = System.nanoTime();
