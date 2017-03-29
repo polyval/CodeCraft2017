@@ -273,6 +273,7 @@ public class SimulatedAnnealing {
 			}
 		}
 		
+		// Move
 		List<Client> removedServers = new ArrayList<Client>();
 		for (int removedServer : removed) {
 			removedServers.add(Client.getClient(removedServer));
@@ -332,15 +333,12 @@ public class SimulatedAnnealing {
 	}
 	
 	public static void main(String[] args) {
-		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\0\\case8.txt", null);
+		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\2\\case3.txt", null);
 		Graph.makeGraph(graphContent);
 
 		long startTime = System.nanoTime();
-//		move();
-//		moverefresh(); 
 //		dropUntil();
 		dropDeterministicMove();
-//		simulatedAnnealing();
 //		List<Integer> output = getMaxOutput();
 //		for (int i = 0; i < bestServers.size(); i++) {
 //			System.out.println(bestServers.get(i).toString() + ": " + output.get(i));
@@ -349,14 +347,12 @@ public class SimulatedAnnealing {
 		System.out.println(bestServers.size());
 		Zkw.clear();
 		Zkw.setSuperSource(bestServers);
-//		Zkw.getMinCostFlow(Graph.vertexNum, Graph.vertexNum + 1);
-//		solution = Zkw.getPaths();
-//		System.out.println(solution);
-//		System.out.println(Zkw.deepCheck(solution));
-//		List<ArrayList<Integer>> allPaths = new ArrayList<ArrayList<Integer>>();
+		Zkw.getMinCostFlow();
+		solution = Zkw.getPaths();
+		System.out.println(solution);
+		System.out.println(Zkw.deepCheck(solution));
 		long endTime = System.nanoTime();
 		System.out.println((endTime - startTime) / 1000000 + "ms");
 		System.out.println(bestCost);
-//		AnalyseUtil.saveTofile();
 	}
 }

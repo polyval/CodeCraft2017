@@ -296,7 +296,7 @@ public class SearchServers {
 		System.out.println(servers);
 		Zkw.clear();
 		Zkw.setSuperSource(servers);
-		Zkw.getMinCostFlow(Graph.vertexNum, Graph.vertexNum + 1);
+		Zkw.getMinCostFlow();
 		solution = Zkw.getPaths();
 		System.out.println(solution);
 		System.out.println(Zkw.deepCheck(solution));
