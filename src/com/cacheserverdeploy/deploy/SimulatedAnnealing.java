@@ -82,15 +82,8 @@ public class SimulatedAnnealing {
 	}
 	
 	public static void dropDeterministic() {
-		Client[] clients = new Client[Graph.clientVertexNum];
-		for (int i = 0; i < Graph.clientVertexNum; i++) {
-			clients[i] = new Client(Graph.clientVertexId[i], Graph.clientDemand[i]);
-		}
-		Arrays.sort(clients);
-		for (Client client : clients) {
-			bestServers.add(client.vertexId);
-		}
-		bestCost = Graph.serverCost * Graph.clientVertexNum;
+		initialize();
+		
 		int i = 0;
 		int newCost = 0;
 		// Drop
@@ -111,15 +104,7 @@ public class SimulatedAnnealing {
 	}
 	
 	public static void selectiveDrop() {
-		Client[] clients = new Client[Graph.clientVertexNum];
-		for (int i = 0; i < Graph.clientVertexNum; i++) {
-			clients[i] = new Client(Graph.clientVertexId[i], Graph.clientDemand[i]);
-		}
-		Arrays.sort(clients);
-		for (Client client : clients) {
-			bestServers.add(client.vertexId);
-		}
-		bestCost = Graph.serverCost * Graph.clientVertexNum;
+		initialize();
 		
 		Map<Integer, Integer> serverIndex = new HashMap<Integer, Integer>();
 		for (int i = 0; i < Graph.clientVertexNum; i++) {
@@ -174,20 +159,72 @@ public class SimulatedAnnealing {
 			}
 		}
 		// Move
-//		reintroduceDroppedServers(removed, serverIndex);
+//		selectiveAdd(removed);
+		reintroduceDroppedServers(removed, serverIndex);
+		drop();
 		addDroppedServers(removed);
 	}
 	
+	public static void selectiveAdd(List<Integer> promisingServers) {
+		int startIndex = 0;
+		int newCost = 0;
+		while (!promisingServers.isEmpty() && startIndex < promisingServers.size()) {
+			int bestIndex = -1;
+			int curIndex = startIndex;
+			int curBestCost = Integer.MAX_VALUE;
+			while (curIndex < promisingServers.size() && curIndex - startIndex < 10) {
+				bestServers.add(promisingServers.get(curIndex));
+				newCost = getAllCost(bestServers);
+				
+				bestServers.remove(bestServers.size() - 1);
+				if (newCost >= bestCost) {
+					curIndex++;
+					continue;
+				}
+				
+				if (newCost < curBestCost) {
+					curBestCost = newCost;
+					bestIndex = curIndex;
+				}
+				
+				curIndex++;
+			}
+			
+			if (curBestCost < bestCost) {
+				bestCost = curBestCost;
+				bestServers.add(promisingServers.get(bestIndex));
+				promisingServers.remove(bestIndex);
+				System.out.println("new best servers location by adding" + bestServers);
+				System.out.println("new best cost:" + bestCost);
+			}
+			else {
+				startIndex++;
+			}
+		}
+	}
+	
+	public static void drop() {
+		int dropIndex = 0;
+		int newCost;
+		while (dropIndex < bestServers.size() && (System.nanoTime() - startTime) / 1000000 < 88500) {
+			int droppedServer = bestServers.get(dropIndex);
+			bestServers.remove(dropIndex);
+			
+			newCost = getAllCost(bestServers);
+			if (newCost < bestCost) {
+				bestCost = newCost;
+				System.out.println("new best servers location by dropping" + bestServers);
+				System.out.println("new best cost:" + bestCost);
+			}
+			else {
+				bestServers.add(dropIndex, droppedServer);
+				dropIndex++;
+			}
+		}
+	}
 	
 	public static void dropDeterministicMove() {
-		Client[] clients = new Client[Graph.clientVertexNum];
-		for (int i = 0; i < Graph.clientVertexNum; i++) {
-			clients[i] = new Client(Graph.clientVertexId[i], Graph.clientDemand[i]);
-		}
-		Arrays.sort(clients);
-		for (Client client : clients) {
-			bestServers.add(client.vertexId);
-		}
+		initialize();
 		
 		Map<Integer, Integer> serverIndex = new HashMap<Integer, Integer>();
 		for (int i = 0; i < Graph.clientVertexNum; i++) {
@@ -216,22 +253,28 @@ public class SimulatedAnnealing {
 		}
 		
 		// Move
+		addDroppedServers(removed);
 		reintroduceDroppedServers(removed, serverIndex);
+		drop();
 	}
 	
 	public static void addDroppedServers(List<Integer> removed) {
 		sortRemovedServers(removed);
 		
-		for (int server : removed) {
-			bestServers.add(server);
+		int i = 0;
+		while (i < removed.size()) {
+			bestServers.add(removed.get(i));
 			int newCost = getAllCost(bestServers);
 			if (newCost < bestCost) {
+				// Update removed list.
+				removed.remove(i);
 				bestCost = newCost;
 				System.out.println("new best servers location by adding" + bestServers);
 				System.out.println("new best cost:" + bestCost);
 			}
 			else {
 				bestServers.remove(bestServers.size() - 1);
+				i++;
 			}
 		}
 	}
@@ -239,11 +282,12 @@ public class SimulatedAnnealing {
 	public static void reintroduceDroppedServers(List<Integer> removed, Map<Integer, Integer> serverIndex) {
 		sortRemovedServers(removed);
 		
-		for (int server : removed) {
+		for (int i = 0; i < removed.size(); i++) {
 			if ((System.nanoTime() - startTime) / 1000000 > 88500) {
 				break;
 			}
 			int count = 0;
+			int server = removed.get(i);
 			int index = serverIndex.get(server);
 			int newCost;
 			for (int j = 0; j < bestServers.size(); j++) {
@@ -256,9 +300,11 @@ public class SimulatedAnnealing {
 				
 				count++;
 				List<Integer> newServers = new ArrayList<Integer>(bestServers);
+				int changedServer = newServers.get(j);
 				newServers.set(j, server);
 				newCost = getAllCost(newServers);
 				if (newCost < bestCost) {
+					removed.set(i, changedServer);
 					bestCost = newCost;
 					bestServers = new ArrayList<Integer>(newServers);
 					System.out.println("new best servers location by moving" + bestServers);
@@ -269,6 +315,11 @@ public class SimulatedAnnealing {
 		}
 	}
 	
+	/**
+	 * Sorts the removed servers by its potential maximum output.
+	 * 
+	 * @param removed - removed servers.
+	 */
 	public static void sortRemovedServers(List<Integer> removed) {
 		List<Client> removedServers = new ArrayList<Client>();
 		for (int removedServer : removed) {
@@ -283,19 +334,33 @@ public class SimulatedAnnealing {
 			
 		});
 		removed.clear();
-		for (int j = 1; j < removedServers.size(); j++) {
+		for (int j = 0; j < removedServers.size(); j++) {
 			removed.add(removedServers.get(j).vertexId);
 		}
 	}
 	
+	public static void initialize() {
+		Client[] clients = new Client[Graph.clientVertexNum];
+		for (int i = 0; i < Graph.clientVertexNum; i++) {
+			clients[i] = new Client(Graph.clientVertexId[i], Graph.clientDemand[i]);
+		}
+		Arrays.sort(clients);
+		for (Client client : clients) {
+			bestServers.add(client.vertexId);
+		}
+		bestCost = Graph.clientVertexNum * Graph.serverCost;
+	}
+	
 	public static void main(String[] args) {
-		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\0\\case7.txt", null);
+		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\1\\case6.txt", null);
 		Graph.makeGraph(graphContent);
 
 		long startTime = System.nanoTime();
 //		dropUntil();
 //		dropDeterministicMove();
 		selectiveDrop();
+//		Arrays.sort(Graph.clientVertexId);
+//		System.out.println(Arrays.toString(Graph.clientVertexId));
 //		List<Integer> output = getMaxOutput();
 //		for (int i = 0; i < bestServers.size(); i++) {
 //			System.out.println(bestServers.get(i).toString() + ": " + output.get(i));
