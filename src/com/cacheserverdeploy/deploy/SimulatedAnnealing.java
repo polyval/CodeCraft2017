@@ -15,10 +15,12 @@ import com.filetool.util.FileUtil;
 
 public class SimulatedAnnealing {
 	
-	public static double bestCost;
+	public static int bestCost;
 	public static List<Path> solution = new ArrayList<Path>();
 	public static long startTime = System.nanoTime();
 	public static List<Integer> bestServers = new ArrayList<Integer>();
+	public static List<Integer> finalServers = new ArrayList<Integer>();
+	public static int finalCost;
 	public static Random random = new Random();
 	
 	public static int getAllCost(List<Integer> parentServers)
@@ -161,10 +163,10 @@ public class SimulatedAnnealing {
 		// Move
 //		selectiveAdd(removed);
 		
-//		addDroppedServers(removed);
-//		addNeighbor();
+		addDroppedServers(removed);
 		reintroduceDroppedServers(removed, serverIndex);
 		drop();
+		addNeighbor();
 		
 	}
 	
@@ -354,19 +356,25 @@ public class SimulatedAnnealing {
 			}
 		}
 		sortRemovedServers(neighbor);
+		finalServers = new ArrayList<Integer>(bestServers);
+		finalCost = bestCost;
+		
 		for (int newServer : neighbor) {
 			if (bestServers.contains(newServer)) {
 				continue;
 			}
 			bestServers.add(newServer);
-			int newCost = getAllCost(bestServers);
-			if (newCost < bestCost) {
-				bestCost = newCost;
+			drop();
+			if (bestCost < finalCost) {
+				finalServers = new ArrayList<Integer>(bestServers);
+				finalCost = bestCost;
 				System.out.println("new best servers location by adding neighbor" + bestServers);
 				System.out.println("new best cost:" + bestCost);
 			}
 			else {
-				bestServers.remove(bestServers.size() - 1);
+				bestServers = new ArrayList<Integer>(finalServers);
+				bestCost = finalCost;
+//				bestServers.remove(bestServers.size() - 1);
 			}
 		}
 		
@@ -400,6 +408,7 @@ public class SimulatedAnnealing {
 //		}
 //		System.out.println(bestServers);
 		System.out.println(bestServers.size());
+		System.out.println(finalCost);
 		Zkw.clear();
 		Zkw.setSuperSource(bestServers);
 		Zkw.computeMinCostFlow();
