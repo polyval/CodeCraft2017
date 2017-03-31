@@ -67,7 +67,7 @@ public class SimulatedAnnealing {
 	public static String[] getResults(String[] graphContent) {
 		Graph.makeGraph(graphContent);
 		
-		dropDeterministic();
+		dropDeterministicMove();
 		Zkw.computeFlowCostGivenServers(bestServers);
 		solution = Zkw.getPaths();
 		
@@ -160,9 +160,12 @@ public class SimulatedAnnealing {
 		}
 		// Move
 //		selectiveAdd(removed);
+		
+//		addDroppedServers(removed);
+//		addNeighbor();
 		reintroduceDroppedServers(removed, serverIndex);
 		drop();
-		addDroppedServers(removed);
+		
 	}
 	
 	public static void selectiveAdd(List<Integer> promisingServers) {
@@ -256,6 +259,7 @@ public class SimulatedAnnealing {
 		addDroppedServers(removed);
 		reintroduceDroppedServers(removed, serverIndex);
 		drop();
+		addNeighbor();
 	}
 	
 	public static void addDroppedServers(List<Integer> removed) {
@@ -339,6 +343,35 @@ public class SimulatedAnnealing {
 		}
 	}
 	
+	public static void addNeighbor() {
+		List<Integer> neighbor = new ArrayList<Integer>();
+		for (int client : Graph.clientVertexId) {
+			for (Edge e : Graph.adj[client]) {
+				if (!neighbor.contains(e.target)) {
+					new Client(e.target, 0);
+					neighbor.add(e.target);
+				}
+			}
+		}
+		sortRemovedServers(neighbor);
+		for (int newServer : neighbor) {
+			if (bestServers.contains(newServer)) {
+				continue;
+			}
+			bestServers.add(newServer);
+			int newCost = getAllCost(bestServers);
+			if (newCost < bestCost) {
+				bestCost = newCost;
+				System.out.println("new best servers location by adding neighbor" + bestServers);
+				System.out.println("new best cost:" + bestCost);
+			}
+			else {
+				bestServers.remove(bestServers.size() - 1);
+			}
+		}
+		
+	}
+	
 	public static void initialize() {
 		Client[] clients = new Client[Graph.clientVertexNum];
 		for (int i = 0; i < Graph.clientVertexNum; i++) {
@@ -352,13 +385,13 @@ public class SimulatedAnnealing {
 	}
 	
 	public static void main(String[] args) {
-		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\1\\case6.txt", null);
+		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\2\\case0.txt", null);
 		Graph.makeGraph(graphContent);
 
 		long startTime = System.nanoTime();
 //		dropUntil();
-//		dropDeterministicMove();
-		selectiveDrop();
+		dropDeterministicMove();
+//		selectiveDrop();
 //		Arrays.sort(Graph.clientVertexId);
 //		System.out.println(Arrays.toString(Graph.clientVertexId));
 //		List<Integer> output = getMaxOutput();
