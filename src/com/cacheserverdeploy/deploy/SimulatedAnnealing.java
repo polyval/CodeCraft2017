@@ -26,9 +26,9 @@ public class SimulatedAnnealing {
 	public static int getAllCost(List<Integer> parentServers)
 	{
 		List<Integer> newServers = new ArrayList<Integer>(parentServers);
-		long start = System.nanoTime();
+//		long start = System.nanoTime();
 		Zkw.computeFlowCostGivenServers(newServers);
-		System.out.println((System.nanoTime() - start) / 1000000 + "ms");
+//		System.out.println((System.nanoTime() - start) / 1000000 + "ms");
 		
 		if (Zkw.totalFlow < Graph.totalFlow) {
 			return Integer.MAX_VALUE;
@@ -268,7 +268,7 @@ public class SimulatedAnnealing {
 		sortRemovedServers(removed);
 		
 		int i = 0;
-		while (i < removed.size()) {
+		while (i < removed.size() && (System.nanoTime() - startTime) / 1000000 < 88500) {
 			bestServers.add(removed.get(i));
 			int newCost = getAllCost(bestServers);
 			if (newCost < bestCost) {
@@ -289,7 +289,7 @@ public class SimulatedAnnealing {
 		sortRemovedServers(removed);
 		
 		for (int i = 0; i < removed.size(); i++) {
-			if ((System.nanoTime() - startTime) / 1000000 > 88500) {
+			if ((System.nanoTime() - startTime) / 1000000 > 60000) {
 				break;
 			}
 			int count = 0;
@@ -345,7 +345,7 @@ public class SimulatedAnnealing {
 		}
 	}
 	
-	public static void addNeighbor() {
+	public static List<Integer> getClientNeighbor() {
 		List<Integer> neighbor = new ArrayList<Integer>();
 		for (int client : Graph.clientVertexId) {
 			for (Edge e : Graph.adj[client]) {
@@ -355,11 +355,46 @@ public class SimulatedAnnealing {
 				}
 			}
 		}
+		return neighbor;
+	}
+	
+	public static void addNeighbor() {
+		List<Integer> neighbor = getClientNeighbor();
+		
 		sortRemovedServers(neighbor);
+		addServerAscent(neighbor);
+	}
+	
+	public static void addServerAscent(List<Integer> candidateServers) {
 		finalServers = new ArrayList<Integer>(bestServers);
 		finalCost = bestCost;
 		
-		for (int newServer : neighbor) {
+//		int i = 0;
+//		while (i < candidateServers.size() && (System.nanoTime() - startTime) / 1000000 < 88500) {
+//			int newServer = candidateServers.get(i);
+//			i++;
+//			if (bestServers.contains(newServer)) {
+//				continue;
+//			}
+//			bestServers.add(newServer);
+//			drop();
+//			if (bestCost < finalCost) {
+//				finalServers = new ArrayList<Integer>(bestServers);
+//				finalCost = bestCost;
+//				System.out.println("new best servers location by adding neighbor" + bestServers);
+//				System.out.println("new best cost:" + bestCost);
+//				i = 0;
+//			}
+//			else {
+//				bestServers = new ArrayList<Integer>(finalServers);
+//				bestCost = finalCost;
+//			}
+//		}
+		
+		for (int newServer : candidateServers) {
+			if ((System.nanoTime() - startTime) / 1000000 > 88500) {
+				break;
+			}
 			if (bestServers.contains(newServer)) {
 				continue;
 			}
@@ -374,10 +409,8 @@ public class SimulatedAnnealing {
 			else {
 				bestServers = new ArrayList<Integer>(finalServers);
 				bestCost = finalCost;
-//				bestServers.remove(bestServers.size() - 1);
 			}
 		}
-		
 	}
 	
 	public static void initialize() {
@@ -393,13 +426,13 @@ public class SimulatedAnnealing {
 	}
 	
 	public static void main(String[] args) {
-		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\2\\case0.txt", null);
+		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\1\\case0.txt", null);
 		Graph.makeGraph(graphContent);
-
+		
 		long startTime = System.nanoTime();
 //		dropUntil();
-		dropDeterministicMove();
-//		selectiveDrop();
+//		dropDeterministicMove();
+		selectiveDrop();
 //		Arrays.sort(Graph.clientVertexId);
 //		System.out.println(Arrays.toString(Graph.clientVertexId));
 //		List<Integer> output = getMaxOutput();
