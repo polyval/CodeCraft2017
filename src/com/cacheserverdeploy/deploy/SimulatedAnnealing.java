@@ -297,7 +297,7 @@ public class SimulatedAnnealing {
 			int index = serverIndex.get(server);
 			int newCost;
 			for (int j = 0; j < bestServers.size(); j++) {
-				if (count >= 20 || (System.nanoTime() - startTime) / 1000000 > 88500) {
+				if (count >= 20 || (System.nanoTime() - startTime) / 1000000 > 60000) {
 					break;
 				}
 				if (serverIndex.get(bestServers.get(j)) < index) {
@@ -369,32 +369,10 @@ public class SimulatedAnnealing {
 		finalServers = new ArrayList<Integer>(bestServers);
 		finalCost = bestCost;
 		
-//		int i = 0;
-//		while (i < candidateServers.size() && (System.nanoTime() - startTime) / 1000000 < 88500) {
-//			int newServer = candidateServers.get(i);
-//			i++;
-//			if (bestServers.contains(newServer)) {
-//				continue;
-//			}
-//			bestServers.add(newServer);
-//			drop();
-//			if (bestCost < finalCost) {
-//				finalServers = new ArrayList<Integer>(bestServers);
-//				finalCost = bestCost;
-//				System.out.println("new best servers location by adding neighbor" + bestServers);
-//				System.out.println("new best cost:" + bestCost);
-//				i = 0;
-//			}
-//			else {
-//				bestServers = new ArrayList<Integer>(finalServers);
-//				bestCost = finalCost;
-//			}
-//		}
-		
-		for (int newServer : candidateServers) {
-			if ((System.nanoTime() - startTime) / 1000000 > 88500) {
-				break;
-			}
+		int i = 0;
+		while (i < candidateServers.size() && (System.nanoTime() - startTime) / 1000000 < 88500) {
+			int newServer = candidateServers.get(i);
+			i++;
 			if (bestServers.contains(newServer)) {
 				continue;
 			}
@@ -405,12 +383,35 @@ public class SimulatedAnnealing {
 				finalCost = bestCost;
 				System.out.println("new best servers location by adding neighbor" + bestServers);
 				System.out.println("new best cost:" + bestCost);
+				i = 0;
 			}
 			else {
 				bestServers = new ArrayList<Integer>(finalServers);
 				bestCost = finalCost;
 			}
 		}
+		
+//		for (int newServer : candidateServers) {
+//			if ((System.nanoTime() - startTime) / 1000000 > 88500) {
+//				break;
+//			}
+//			if (bestServers.contains(newServer)) {
+//				continue;
+//			}
+//			bestServers.add(newServer);
+//			bestCost = getAllCost(bestServers);
+//			drop();
+//			if (bestCost < finalCost) {
+//				finalServers = new ArrayList<Integer>(bestServers);
+//				finalCost = bestCost;
+//				System.out.println("new best servers location by adding neighbor" + bestServers);
+//				System.out.println("new best cost:" + bestCost);
+//			}
+//			else {
+//				bestServers = new ArrayList<Integer>(finalServers);
+//				bestCost = finalCost;
+//			}
+//		}
 	}
 	
 	public static void initialize() {
@@ -426,7 +427,7 @@ public class SimulatedAnnealing {
 	}
 	
 	public static void main(String[] args) {
-		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\1\\case0.txt", null);
+		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\2\\case5.txt", null);
 		Graph.makeGraph(graphContent);
 		
 		long startTime = System.nanoTime();
