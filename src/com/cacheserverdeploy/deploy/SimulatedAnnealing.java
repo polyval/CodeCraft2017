@@ -19,8 +19,7 @@ public class SimulatedAnnealing {
 	public static List<Path> solution = new ArrayList<Path>();
 	public static long startTime = System.nanoTime();
 	public static List<Integer> bestServers = new ArrayList<Integer>();
-	public static List<Integer> finalServers = new ArrayList<Integer>();
-	public static int finalCost;
+	public static List<Integer> candidateServers = new ArrayList<Integer>();
 	public static Random random = new Random();
 	
 	public static int getAllCost(List<Integer> parentServers)
@@ -117,7 +116,6 @@ public class SimulatedAnnealing {
 		int newCost = 0;
 		Set<Integer> tabu = new HashSet<Integer>();
 		// Drop
-		List<Integer> removed = new ArrayList<Integer>();
 		while (i < bestServers.size()) {
 			if (tabu.contains(bestServers.get(i))) {
 				i++;
@@ -151,7 +149,7 @@ public class SimulatedAnnealing {
 			
 			if (curBestCost < bestCost) {
 				bestCost = curBestCost;
-				removed.add(bestServers.get(bestRemoveIndex));
+				candidateServers.add(bestServers.get(bestRemoveIndex));
 				bestServers.remove(bestRemoveIndex);
 				System.out.println("new best servers location by dropping" + bestServers);
 				System.out.println("new best cost:" + bestCost);
@@ -161,13 +159,13 @@ public class SimulatedAnnealing {
 			}
 		}
 		// Move
-//		selectiveAdd(removed);
+		selectiveAdd(candidateServers);
 		
-		addDroppedServers(removed);
-		reintroduceDroppedServers(removed, serverIndex);
+		reintroduceDroppedServers(candidateServers, serverIndex);
+		addDroppedServers(candidateServers);
 		drop();
+		addServerAscent(candidateServers);
 		addNeighbor();
-		
 	}
 	
 	public static void selectiveAdd(List<Integer> promisingServers) {
@@ -218,6 +216,7 @@ public class SimulatedAnnealing {
 			newCost = getAllCost(bestServers);
 			if (newCost < bestCost) {
 				bestCost = newCost;
+				candidateServers.add(droppedServer);
 				System.out.println("new best servers location by dropping" + bestServers);
 				System.out.println("new best cost:" + bestCost);
 			}
@@ -240,14 +239,13 @@ public class SimulatedAnnealing {
 		int i = 0;
 		int newCost = 0;
 		// Drop
-		List<Integer> removed = new ArrayList<Integer>();
 		while (i < bestServers.size()) {
 			int removedServer = bestServers.get(i);
 			bestServers.remove(i);
 			newCost = getAllCost(bestServers);
 			if (newCost < bestCost) {
 				bestCost = newCost;
-				removed.add(removedServer);
+				candidateServers.add(removedServer);
 				System.out.println("new best servers location by dropping" + bestServers);
 				System.out.println("new best cost:" + bestCost);
 			}
@@ -258,14 +256,14 @@ public class SimulatedAnnealing {
 		}
 		
 		// Move
-		addDroppedServers(removed);
-		reintroduceDroppedServers(removed, serverIndex);
+		addDroppedServers(candidateServers);
+		reintroduceDroppedServers(candidateServers, serverIndex);
 		drop();
 		addNeighbor();
 	}
 	
 	public static void addDroppedServers(List<Integer> removed) {
-		sortRemovedServers(removed);
+		sortServers(removed);
 		
 		int i = 0;
 		while (i < removed.size() && (System.nanoTime() - startTime) / 1000000 < 88500) {
@@ -286,7 +284,7 @@ public class SimulatedAnnealing {
 	}
 	
 	public static void reintroduceDroppedServers(List<Integer> removed, Map<Integer, Integer> serverIndex) {
-		sortRemovedServers(removed);
+		sortServers(removed);
 		
 		for (int i = 0; i < removed.size(); i++) {
 			if ((System.nanoTime() - startTime) / 1000000 > 60000) {
@@ -310,6 +308,7 @@ public class SimulatedAnnealing {
 				newServers.set(j, server);
 				newCost = getAllCost(newServers);
 				if (newCost < bestCost) {
+					// Update removed list.
 					removed.set(i, changedServer);
 					bestCost = newCost;
 					bestServers = new ArrayList<Integer>(newServers);
@@ -322,11 +321,10 @@ public class SimulatedAnnealing {
 	}
 	
 	/**
-	 * Sorts the removed servers by its potential maximum output.
+	 * Sorts the servers by its potential maximum output.
 	 * 
-	 * @param removed - removed servers.
 	 */
-	public static void sortRemovedServers(List<Integer> removed) {
+	public static void sortServers(List<Integer> removed) {
 		List<Client> removedServers = new ArrayList<Client>();
 		for (int removedServer : removed) {
 			removedServers.add(Client.getClient(removedServer));
@@ -361,13 +359,13 @@ public class SimulatedAnnealing {
 	public static void addNeighbor() {
 		List<Integer> neighbor = getClientNeighbor();
 		
-		sortRemovedServers(neighbor);
+		sortServers(neighbor);
 		addServerAscent(neighbor);
 	}
 	
 	public static void addServerAscent(List<Integer> candidateServers) {
-		finalServers = new ArrayList<Integer>(bestServers);
-		finalCost = bestCost;
+		List<Integer> tempServers = new ArrayList<Integer>(bestServers);
+		int tempCost = bestCost;
 		
 		int i = 0;
 		while (i < candidateServers.size() && (System.nanoTime() - startTime) / 1000000 < 88500) {
@@ -377,17 +375,18 @@ public class SimulatedAnnealing {
 				continue;
 			}
 			bestServers.add(newServer);
+			bestCost = getAllCost(bestServers);
 			drop();
-			if (bestCost < finalCost) {
-				finalServers = new ArrayList<Integer>(bestServers);
-				finalCost = bestCost;
+			if (bestCost < tempCost) {
+				tempServers = new ArrayList<Integer>(bestServers);
+				tempCost = bestCost;
 				System.out.println("new best servers location by adding neighbor" + bestServers);
 				System.out.println("new best cost:" + bestCost);
 				i = 0;
 			}
 			else {
-				bestServers = new ArrayList<Integer>(finalServers);
-				bestCost = finalCost;
+				bestServers = new ArrayList<Integer>(tempServers);
+				bestCost = tempCost;
 			}
 		}
 		
@@ -401,15 +400,15 @@ public class SimulatedAnnealing {
 //			bestServers.add(newServer);
 //			bestCost = getAllCost(bestServers);
 //			drop();
-//			if (bestCost < finalCost) {
-//				finalServers = new ArrayList<Integer>(bestServers);
-//				finalCost = bestCost;
+//			if (bestCost < tempCost) {
+//				tempServers = new ArrayList<Integer>(bestServers);
+//				tempCost = bestCost;
 //				System.out.println("new best servers location by adding neighbor" + bestServers);
 //				System.out.println("new best cost:" + bestCost);
 //			}
 //			else {
-//				bestServers = new ArrayList<Integer>(finalServers);
-//				bestCost = finalCost;
+//				bestServers = new ArrayList<Integer>(tempServers);
+//				bestCost = tempCost;
 //			}
 //		}
 	}
@@ -427,7 +426,7 @@ public class SimulatedAnnealing {
 	}
 	
 	public static void main(String[] args) {
-		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\2\\case5.txt", null);
+		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\0\\case4.txt", null);
 		Graph.makeGraph(graphContent);
 		
 		long startTime = System.nanoTime();
@@ -442,7 +441,6 @@ public class SimulatedAnnealing {
 //		}
 //		System.out.println(bestServers);
 		System.out.println(bestServers.size());
-		System.out.println(finalCost);
 		Zkw.clear();
 		Zkw.setSuperSource(bestServers);
 		Zkw.computeMinCostFlow();
