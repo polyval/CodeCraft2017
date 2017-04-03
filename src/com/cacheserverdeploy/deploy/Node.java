@@ -3,18 +3,18 @@ package com.cacheserverdeploy.deploy;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Client implements Comparable<Client> {
-	public static Map<Integer, Client> idToClient = new HashMap<Integer, Client>();
+public class Node implements Comparable<Node> {
+	public static Map<Integer, Node> idToNode = new HashMap<Integer, Node>();
 	int vertexId;
 	int demands;
-	public Client(int vertexId, int demands) {
+	public Node(int vertexId, int demands) {
 		this.vertexId = vertexId;
 		this.demands = demands;
-		idToClient.put(vertexId, this);
+		idToNode.put(vertexId, this);
 	}
 	
-	public static Client getClient(int vertexId) {
-		return idToClient.get(vertexId);
+	public static Node getClient(int vertexId) {
+		return idToNode.get(vertexId);
 	}
 	
 	public int getOutput() {
@@ -26,7 +26,7 @@ public class Client implements Comparable<Client> {
 	}
 	
 	@Override
-	public int compareTo(Client that) {
+	public int compareTo(Node that) {
 		return this.demands - that.demands;
 	}
 	
