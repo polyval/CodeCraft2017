@@ -13,7 +13,7 @@ import java.util.Set;
 
 import com.filetool.util.FileUtil;
 
-public class SimulatedAnnealing {
+public class Search {
 	
 	public static int bestCost;
 	public static List<Path> solution = new ArrayList<Path>();
@@ -159,12 +159,11 @@ public class SimulatedAnnealing {
 			}
 		}
 		// Move
-		selectiveAdd(candidateServers);
-		
-		reintroduceDroppedServers(candidateServers, serverIndex);
+//		selectiveAdd(candidateServers);
 		addDroppedServers(candidateServers);
+		reintroduceDroppedServers(candidateServers, serverIndex);
+//		addServerAscent(candidateServers);
 		drop();
-		addServerAscent(candidateServers);
 		addNeighbor();
 	}
 	
@@ -357,7 +356,14 @@ public class SimulatedAnnealing {
 	}
 	
 	public static void addNeighbor() {
-		List<Integer> neighbor = getClientNeighbor();
+//		List<Integer> neighbor = getClientNeighbor();
+		List<Integer> neighbor = new ArrayList<Integer>();
+		for (int i = 0; i < Graph.vertexNum; i++) {
+			if (Client.getClient(i) == null) {
+				new Client(i, 0);
+			}
+			neighbor.add(i);
+		}
 		
 		sortServers(neighbor);
 		addServerAscent(neighbor);
@@ -413,6 +419,35 @@ public class SimulatedAnnealing {
 //		}
 	}
 	
+	public static void moveBrutal() {
+		int i = 0;
+		while(i < bestServers.size()) {
+			int moveOut = bestServers.get(i);
+			boolean findBetter = false;
+			for(int j = 0; j < Graph.vertexNum; j++) {
+				if (bestServers.contains(j)) {
+					continue;
+				}
+				bestServers.set(i, j);
+				int newCost = getAllCost(bestServers);
+				if (newCost < bestCost) {
+					findBetter = true;
+					bestCost = newCost;
+					System.out.println("new best servers location by moving" + bestServers);
+					break;
+				}
+				else {
+					bestServers.set(i, moveOut);
+				}
+			}
+			if (findBetter) {
+				i = 0;
+				continue;
+			}
+			i++;
+		}
+	}
+	
 	public static void initialize() {
 		Client[] clients = new Client[Graph.clientVertexNum];
 		for (int i = 0; i < Graph.clientVertexNum; i++) {
@@ -426,13 +461,13 @@ public class SimulatedAnnealing {
 	}
 	
 	public static void main(String[] args) {
-		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\0\\case4.txt", null);
+		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\1\\case0.txt", null);
 		Graph.makeGraph(graphContent);
 		
 		long startTime = System.nanoTime();
 //		dropUntil();
-//		dropDeterministicMove();
-		selectiveDrop();
+		dropDeterministicMove();
+//		selectiveDrop();
 //		Arrays.sort(Graph.clientVertexId);
 //		System.out.println(Arrays.toString(Graph.clientVertexId));
 //		List<Integer> output = getMaxOutput();
