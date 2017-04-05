@@ -13,7 +13,7 @@ public class Node implements Comparable<Node> {
 		idToNode.put(vertexId, this);
 	}
 	
-	public static Node getClient(int vertexId) {
+	public static Node getNode(int vertexId) {
 		return idToNode.get(vertexId);
 	}
 	

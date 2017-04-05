@@ -31,10 +31,20 @@ public class Zkw {
 		sink = Graph.vertexNum + 1;
 		visited = new boolean[Graph.resVertexNum];
 		
-		while (lable()) {
+//		while (lable()) {
+//			Arrays.fill(visited, false);
+//			while (augment(source, Integer.MAX_VALUE) != 0) {
+//				Arrays.fill(visited, false);
+//			}
+//		}
+		
+		while (true) {
 			Arrays.fill(visited, false);
-			while (augment(source, Integer.MAX_VALUE) != 0) {
+			while (augment(source, Integer.MAX_VALUE) > 0) {
 				Arrays.fill(visited, false);
+			}
+			if (!relable()) {
+				break;
 			}
 		}
 	}
@@ -108,6 +118,35 @@ public class Zkw {
 		
 		pathCost += dist[source];
 		return dist[source] != Integer.MAX_VALUE;
+	}
+	
+	private static boolean relable() {
+		int temp = Integer.MAX_VALUE;
+		for (int i = 0; i < Graph.resVertexNum; i++) {
+			if (visited[i]) {
+				for (Edge e : Graph.resAdj[i]) {
+					if (e.residualFlow > 0 && !visited[e.target] && e.cost < temp) {
+						temp = e.cost;
+					}
+				}
+			}
+		}
+		
+		if (temp == Integer.MAX_VALUE) {
+			return false;
+		}
+		
+		for (int i = 0; i < Graph.resVertexNum; i++) {
+			if (visited[i]) {
+				for (Edge e : Graph.resAdj[i]) {
+					e.cost -= temp;
+					e.counterEdge.cost += temp;
+				}
+			}
+		}
+		
+		pathCost += temp;
+		return true;
 	}
 	
 	public static void setSuperSource(List<Integer> servers) {

@@ -66,8 +66,8 @@ public class Search {
 		}
 		
 		// Move
-		selectiveAdd(candidateServers);
 		reintroduceDroppedServers(candidateServers, serverIndex);
+		addDroppedServers(candidateServers);
 		drop();
 		addNeighbor();
 	}
@@ -127,9 +127,9 @@ public class Search {
 			}
 		}
 		// Move
-//		selectiveAdd(candidateServers);
-		addDroppedServers(candidateServers);
+//		addDroppedServers(candidateServers);
 		reintroduceDroppedServers(candidateServers, serverIndex);
+		selectiveAdd(candidateServers);
 //		addServerAscent(candidateServers);
 		drop();
 		addNeighbor();
@@ -291,19 +291,19 @@ public class Search {
 	}
 	
 	private static void addNeighbor() {
-		List<Integer> neighbor = getClientNeighbor();
-		for (int client : Graph.clientVertexId) {
-			if (!neighbor.contains(client)) {
-				neighbor.add(client);
-			}
-		}
-//		List<Integer> neighbor = new ArrayList<Integer>();
-//		for (int i = 0; i < Graph.vertexNum; i++) {
-//			if (Client.getClient(i) == null) {
-//				new Client(i, 0);
+//		List<Integer> neighbor = getClientNeighbor();
+//		for (int client : Graph.clientVertexId) {
+//			if (!neighbor.contains(client)) {
+//				neighbor.add(client);
 //			}
-//			neighbor.add(i);
 //		}
+		List<Integer> neighbor = new ArrayList<Integer>();
+		for (int i = 0; i < Graph.vertexNum; i++) {
+			if (Node.getNode(i) == null) {
+				new Node(i, 0);
+			}
+			neighbor.add(i);
+		}
 		
 		sortServers(neighbor);
 		addServerAscent(neighbor);
@@ -320,6 +320,7 @@ public class Search {
 			if (bestServers.contains(newServer)) {
 				continue;
 			}
+			
 			bestServers.add(newServer);
 			bestCost = getAllCost(bestServers);
 			drop();
@@ -407,7 +408,7 @@ public class Search {
 	private static void sortServers(List<Integer> removed) {
 		List<Node> removedServers = new ArrayList<Node>();
 		for (int removedServer : removed) {
-			removedServers.add(Node.getClient(removedServer));
+			removedServers.add(Node.getNode(removedServer));
 		}
 		Collections.sort(removedServers, new Comparator<Node>() {
 
@@ -424,11 +425,14 @@ public class Search {
 	}
 	
 	public static void main(String[] args) {
-		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\1\\case1.txt", null);
+		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\2\\case7.txt", null);
 		Graph.makeGraph(graphContent);
 		
 		long startTime = System.nanoTime();
 		dropDeterministicMove();
+//		bestServers.add(100);
+//		getAllCost(bestServers);
+//		System.out.println((System.nanoTime() - startTime) / 1000000);
 //		selectiveDrop();
 //		Arrays.sort(Graph.clientVertexId);
 //		System.out.println(Arrays.toString(Graph.clientVertexId));
