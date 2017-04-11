@@ -7,9 +7,11 @@ public class Node implements Comparable<Node> {
 	public static Map<Integer, Node> idToNode = new HashMap<Integer, Node>();
 	int vertexId;
 	int demands;
-	public Node(int vertexId, int demands) {
+	int cost;
+	public Node(int vertexId, int demands, int cost) {
 		this.vertexId = vertexId;
 		this.demands = demands;
+		this.cost = cost;
 		idToNode.put(vertexId, this);
 	}
 	
@@ -22,11 +24,12 @@ public class Node implements Comparable<Node> {
 		for (Edge e : Graph.adj[vertexId]) {
 			output += e.bandwidth;
 		}
-		return output;
+		return output + demands;
 	}
 	
 	@Override
 	public int compareTo(Node that) {
+//		return that.cost - this.cost;
 		return this.demands - that.demands;
 	}
 	

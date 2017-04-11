@@ -17,14 +17,18 @@ public class Search {
 	private static int bestCost;
 	private static List<Path> solution = new ArrayList<Path>();
 	private static long startTime = System.nanoTime();
-	private static List<Integer> bestServers = new ArrayList<Integer>();
+	private static boolean debug = true;
+	public static List<Integer> bestServers = new ArrayList<Integer>();
+	public static List<Integer> bestServerTypes = new ArrayList<Integer>();
+	private static List<Integer> curServerTypes = new ArrayList<Integer>();
 	private static List<Integer> candidateServers = new ArrayList<Integer>();
+	private static Node[] nodes;
 	
 	public static String[] getResults(String[] graphContent) {
 		Graph.makeGraph(graphContent);
 		
 		dropDeterministicMove();
-		Zkw.computeFlowCostGivenServers(bestServers);
+		Zkw.computeFlowCostGivenServers(bestServers, bestServerTypes);
 		solution = Zkw.getPaths();
 		
 		String[] res = new String[solution.size() + 2];
@@ -41,39 +45,51 @@ public class Search {
 		initialize();
 		
 		Map<Integer, Integer> serverIndex = new HashMap<Integer, Integer>();
-		for (int i = 0; i < Graph.clientVertexNum; i++) {
+		for (int i = 0; i < bestServers.size(); i++) {
 			serverIndex.put(bestServers.get(i), i);
 		}
-		
-		bestCost = Graph.serverCost * Graph.clientVertexNum;
+//		Collections.shuffle(bestServers);
+//		sortByVertexCost(bestServers);
+//		sortServers(bestServers);
+//		Collections.reverse(bestServers);
 		int i = 0;
 		int newCost = 0;
 		// Drop
 		while (i < bestServers.size()) {
 			int removedServer = bestServers.get(i);
+			int removedServerType = bestServerTypes.get(i);
 			bestServers.remove(i);
-			newCost = getAllCost(bestServers);
+			bestServerTypes.remove(i);
+			
+			newCost = getAllCost(bestServers, bestServerTypes);
 			if (newCost < bestCost) {
 				bestCost = newCost;
 				candidateServers.add(removedServer);
-				System.out.println("new best servers location by dropping" + bestServers);
-				System.out.println("new best cost:" + bestCost);
+				if (debug) {
+					System.out.println("new best servers location by dropping" + bestServers);
+					System.out.println("new best cost:" + bestCost);
+				}
 			}
 			else {
 				bestServers.add(i, removedServer);
+				bestServerTypes.add(i, removedServerType);
 				i++;
 			}
 		}
 		
-		// Move
-		reintroduceDroppedServers(candidateServers, serverIndex);
-		addDroppedServers(candidateServers);
-		drop();
+//		reintroduceDroppedServers(candidateServers, serverIndex);
+//		addDroppedServers(candidateServers);
 		addNeighbor();
+		modifyServerType();
+		bestCost = getAllCost(bestServers, bestServerTypes);
+		System.out.println("Split line------------------");
+//		drop();
 	}
 	
 	private static void selectiveDrop() {
 		initialize();
+		sortServers(bestServers);
+		Collections.reverse(bestServers);
 		
 		Map<Integer, Integer> serverIndex = new HashMap<Integer, Integer>();
 		for (int i = 0; i < Graph.clientVertexNum; i++) {
@@ -95,10 +111,12 @@ public class Search {
 			int curBestCost = Integer.MAX_VALUE;
 			while (curRemoveIndex < bestServers.size() && curRemoveIndex - i < 10) {
 				int curRemovedServer = bestServers.get(curRemoveIndex);
+				int curRemovedServerType = bestServerTypes.get(curRemoveIndex);
 				bestServers.remove(curRemoveIndex);
-				newCost = getAllCost(bestServers);
+				newCost = getAllCost(bestServers, bestServerTypes);
 				
 				bestServers.add(curRemoveIndex, curRemovedServer);
+				bestServerTypes.add(curRemoveIndex, curRemovedServerType);
 				
 				// Not feasible to drop.
 				if (newCost >= bestCost) {
@@ -119,8 +137,11 @@ public class Search {
 				bestCost = curBestCost;
 				candidateServers.add(bestServers.get(bestRemoveIndex));
 				bestServers.remove(bestRemoveIndex);
-				System.out.println("new best servers location by dropping" + bestServers);
-				System.out.println("new best cost:" + bestCost);
+				bestServerTypes.remove(bestRemoveIndex);
+				if (debug) {
+					System.out.println("new best servers location by dropping" + bestServers);
+					System.out.println("new best cost:" + bestCost);
+				}
 			}
 			else {
 				i++;
@@ -128,39 +149,45 @@ public class Search {
 		}
 		// Move
 //		addDroppedServers(candidateServers);
-		reintroduceDroppedServers(candidateServers, serverIndex);
-		selectiveAdd(candidateServers);
+//		reintroduceDroppedServers(candidateServers, serverIndex);
+//		selectiveAdd(candidateServers);
 //		addServerAscent(candidateServers);
-		drop();
+//		drop();
 		addNeighbor();
+		modifyServerType();
+		bestCost = getAllCost(bestServers, bestServerTypes);
 	}
 	
-	private static int getAllCost(List<Integer> servers)
+	private static int getAllCost(List<Integer> servers, List<Integer> serverTypes)
 	{
 //		long start = System.nanoTime();
-		Zkw.computeFlowCostGivenServers(servers);
+		Zkw.computeFlowCostGivenServers(servers, serverTypes);
 //		System.out.println((System.nanoTime() - start) / 1000000 + "ms");
 		
 		if (Zkw.totalFlow < Graph.totalFlow) {
 			return Integer.MAX_VALUE;
 		}
 		
-		int serverNum = 0;
+		List<Integer> userdServers = new ArrayList<Integer>();
 		for (Edge e : Graph.resAdj[Graph.vertexNum]) {
-			if (e.residualFlow < Integer.MAX_VALUE) {
-				serverNum++;
+			if (e.residualFlow < e.bandwidth) {
+				userdServers.add(e.target);
 			}
 		}
 		
-		Zkw.totalCost += serverNum * Graph.serverCost;
-		return Zkw.totalCost;
+		for (int i = 0; i < userdServers.size(); i++) {
+			int serverVertex = userdServers.get(i);
+			Zkw.totalCost += Graph.diffServerCost.get(serverTypes.get(servers.indexOf(Integer.valueOf(serverVertex))));
+			Zkw.totalCost += Graph.vertexCost[serverVertex];
+		}
 		
+		return Zkw.totalCost;
 	}
 	
 	private static void selectiveAdd(List<Integer> promisingServers) {
 		int startIndex = 0;
 		int newCost = 0;
-		while (!promisingServers.isEmpty() && startIndex < promisingServers.size() && (System.nanoTime() - startTime) / 1000000 < 88500) {
+		while (!promisingServers.isEmpty() && startIndex < promisingServers.size() && (System.nanoTime() - startTime) / 1000000 < 88000) {
 			int bestIndex = -1;
 			int curIndex = startIndex;
 			int curBestCost = Integer.MAX_VALUE;
@@ -172,7 +199,7 @@ public class Search {
 				}
 				
 				bestServers.add(server);
-				newCost = getAllCost(bestServers);
+				newCost = getAllCost(bestServers, bestServerTypes);
 				bestServers.remove(bestServers.size() - 1);
 				
 				if (newCost < curBestCost) {
@@ -199,19 +226,24 @@ public class Search {
 	private static void drop() {
 		int dropIndex = 0;
 		int newCost;
-		while (dropIndex < bestServers.size() && (System.nanoTime() - startTime) / 1000000 < 88500) {
+		while (dropIndex < bestServers.size() && (System.nanoTime() - startTime) / 1000000 < 88000) {
 			int droppedServer = bestServers.get(dropIndex);
+			int droppedServerType = bestServerTypes.get(dropIndex);
 			bestServers.remove(dropIndex);
+			bestServerTypes.remove(dropIndex);
 			
-			newCost = getAllCost(bestServers);
+			newCost = getAllCost(bestServers, bestServerTypes);
 			if (newCost < bestCost) {
 				bestCost = newCost;
 				candidateServers.add(droppedServer);
-				System.out.println("new best servers location by dropping" + bestServers);
-				System.out.println("new best cost:" + bestCost);
+				if (debug) {
+					System.out.println("new best servers location by dropping" + bestServers);
+					System.out.println("new best cost:" + bestCost);
+				}
 			}
 			else {
 				bestServers.add(dropIndex, droppedServer);
+				bestServerTypes.add(dropIndex, droppedServerType);
 				dropIndex++;
 			}
 		}
@@ -221,9 +253,10 @@ public class Search {
 		sortServers(removed);
 		
 		int i = 0;
-		while (i < removed.size() && (System.nanoTime() - startTime) / 1000000 < 88500) {
+		while (i < removed.size() && (System.nanoTime() - startTime) / 1000000 < 88000) {
 			bestServers.add(removed.get(i));
-			int newCost = getAllCost(bestServers);
+			bestServerTypes.add(0);
+			int newCost = getAllCost(bestServers, bestServerTypes);
 			if (newCost < bestCost) {
 				// Update removed list.
 				removed.remove(i);
@@ -233,6 +266,7 @@ public class Search {
 			}
 			else {
 				bestServers.remove(bestServers.size() - 1);
+				bestServerTypes.remove(bestServerTypes.size() - 1);
 				i++;
 			}
 		}
@@ -242,7 +276,7 @@ public class Search {
 		sortServers(removed);
 		
 		for (int i = 0; i < removed.size(); i++) {
-			if ((System.nanoTime() - startTime) / 1000000 > 60000) {
+			if ((System.nanoTime() - startTime) / 1000000 > 88000) {
 				break;
 			}
 			int count = 0;
@@ -250,7 +284,7 @@ public class Search {
 			int index = serverIndex.get(server);
 			int newCost;
 			for (int j = 0; j < bestServers.size(); j++) {
-				if (count >= 20 || (System.nanoTime() - startTime) / 1000000 > 60000) {
+				if (count >= 20 || (System.nanoTime() - startTime) / 1000000 > 88000) {
 					break;
 				}
 				if (serverIndex.get(bestServers.get(j)) < index) {
@@ -261,14 +295,16 @@ public class Search {
 				List<Integer> newServers = new ArrayList<Integer>(bestServers);
 				int changedServer = newServers.get(j);
 				newServers.set(j, server);
-				newCost = getAllCost(newServers);
+				newCost = getAllCost(newServers, bestServerTypes);
 				if (newCost < bestCost) {
 					// Update removed list.
 					removed.set(i, changedServer);
 					bestCost = newCost;
 					bestServers = new ArrayList<Integer>(newServers);
-					System.out.println("new best servers location by moving" + bestServers);
-					System.out.println("new best cost:" + bestCost);
+					if (debug) {
+						System.out.println("new best servers location by moving" + bestServers);
+						System.out.println("new best cost:" + bestCost);
+					}
 					break;
 				}
 			}
@@ -282,7 +318,7 @@ public class Search {
 		for (int client : Graph.clientVertexId) {
 			for (Edge e : Graph.adj[client]) {
 				if (!neighbor.contains(e.target)) {
-					new Node(e.target, 0);
+//					new Node(e.target, 0);
 					neighbor.add(e.target);
 				}
 			}
@@ -299,9 +335,6 @@ public class Search {
 //		}
 		List<Integer> neighbor = new ArrayList<Integer>();
 		for (int i = 0; i < Graph.vertexNum; i++) {
-			if (Node.getNode(i) == null) {
-				new Node(i, 0);
-			}
 			neighbor.add(i);
 		}
 		
@@ -311,10 +344,11 @@ public class Search {
 	
 	private static void addServerAscent(List<Integer> candidateServers) {
 		List<Integer> tempServers = new ArrayList<Integer>(bestServers);
+		List<Integer> tempServerTypes = new ArrayList<Integer>(bestServerTypes);
 		int tempCost = bestCost;
 		
 		int i = 0;
-		while (i < candidateServers.size() && (System.nanoTime() - startTime) / 1000000 < 88500) {
+		while (i < candidateServers.size() && (System.nanoTime() - startTime) / 1000000 < 88000) {
 			int newServer = candidateServers.get(i);
 			i++;
 			if (bestServers.contains(newServer)) {
@@ -322,23 +356,33 @@ public class Search {
 			}
 			
 			bestServers.add(newServer);
-			bestCost = getAllCost(bestServers);
+			for (int j = 0; j < Graph.diffServerCost.size(); j++) {
+				if (Graph.diffServerCapacity.get(j) >= Node.getNode(newServer).getOutput() || j == Graph.diffServerCost.size() - 1) {
+					bestServerTypes.add(j);
+					break;
+				}
+			}
+			bestCost = getAllCost(bestServers, bestServerTypes);
 			drop();
 			if (bestCost < tempCost) {
 				tempServers = new ArrayList<Integer>(bestServers);
 				tempCost = bestCost;
-				System.out.println("new best servers location by adding neighbor" + newServer);
-				System.out.println("new best cost:" + bestCost);
+				tempServerTypes = new ArrayList<Integer>(bestServerTypes);
+				if (debug) {
+					System.out.println("new best servers location by adding neighbor" + newServer);
+					System.out.println("new best cost:" + bestCost);
+				}
 				i = 0;
 			}
 			else {
 				bestServers = new ArrayList<Integer>(tempServers);
 				bestCost = tempCost;
+				bestServerTypes = new ArrayList<Integer>(tempServerTypes);
 			}
 		}
 		
 //		for (int newServer : candidateServers) {
-//			if ((System.nanoTime() - startTime) / 1000000 > 88500) {
+//			if ((System.nanoTime() - startTime) / 1000000 > 88000) {
 //				break;
 //			}
 //			if (bestServers.contains(newServer)) {
@@ -360,45 +404,115 @@ public class Search {
 //		}
 	}
 	
-	private static void moveBrutal() {
-		int i = 0;
-		while(i < bestServers.size()) {
-			int moveOut = bestServers.get(i);
-			boolean findBetter = false;
-			for(int j = 0; j < Graph.vertexNum; j++) {
-				if (bestServers.contains(j)) {
-					continue;
-				}
-				bestServers.set(i, j);
-				int newCost = getAllCost(bestServers);
-				if (newCost < bestCost) {
-					findBetter = true;
-					bestCost = newCost;
-					System.out.println("new best servers location by moving" + bestServers);
+	private static void initialize() {
+		initializeNodes();
+		for (int i = 0; i < Graph.clientVertexNum; i++) {
+			bestServers.add(Graph.clientVertexId[i]);
+			for (int j = 0; j < Graph.diffServerCost.size(); j++) {
+				if (Graph.diffServerCapacity.get(j) >= Node.getNode(i).getOutput() || j == Graph.diffServerCost.size() - 1) {
+					bestServerTypes.add(j);
+					bestCost += Graph.diffServerCost.get(j);
+					bestCost += Graph.vertexCost[i];
 					break;
 				}
-				else {
-					bestServers.set(i, moveOut);
-				}
 			}
-			if (findBetter) {
-				i = 0;
-				continue;
-			}
-			i++;
+		}
+		
+//		Zkw.computeFlowCostGivenServers(bestServers, bestServerTypes);
+//		bestCost = Zkw.totalCost;
+//		bestServerTypes.clear();
+//		bestServers.clear();
+//		for (Edge edge : Graph.resAdj[Graph.vertexNum]) {
+//			if (edge.residualFlow < edge.bandwidth) {
+//				bestServers.add(edge.target);
+//				bestServerTypes.add(3);
+//				bestCost += Graph.diffServerCost.get(3);
+//				bestCost += Graph.vertexCost[edge.target];
+//			}
+//		}
+	}
+	
+	private static void sortByVertexCost(List<Integer> servers) {
+		Node[] sortHelper = new Node[servers.size()];
+		for (int i = 0; i < servers.size(); i++) {
+			sortHelper[i] = Node.getNode(servers.get(i));
+		}
+		
+		Arrays.sort(sortHelper);
+		servers.clear();
+		for (int i = 0; i < sortHelper.length; i++) {
+			servers.add(sortHelper[i].vertexId);
 		}
 	}
 	
-	private static void initialize() {
-		Node[] clients = new Node[Graph.clientVertexNum];
-		for (int i = 0; i < Graph.clientVertexNum; i++) {
-			clients[i] = new Node(Graph.clientVertexId[i], Graph.clientDemand[i]);
+	private static void initializeNodes() {
+		nodes = new Node[Graph.vertexNum];
+		for (int i = 0; i < Graph.vertexNum; i++) {
+			int demand = 0;
+			if (Graph.vertexToClient.containsKey(i)) {
+				demand = Graph.clientDemand[Graph.vertexToClient.get(i)];
+			}
+			nodes[i] = new Node(i, demand, Graph.vertexCost[i]);
 		}
-		Arrays.sort(clients);
-		for (Node client : clients) {
-			bestServers.add(client.vertexId);
+	}
+	
+	public static void modifyServerType() {
+		Zkw.computeFlowCostGivenServers(bestServers, bestServerTypes);
+		for (int i = 0; i < bestServers.size(); i++) {
+			int serverType = bestServerTypes.get(i);
+			int server = bestServers.get(i);
+			int usedBandwidth = Graph.resAdj[server].get(Graph.resAdj[server].size() - 1).residualFlow;
+			for (int j = 0; j < Graph.diffServerCapacity.size(); j++) {
+				if (j >= serverType) {
+					break;
+				}
+				if (Graph.diffServerCapacity.get(j) >= usedBandwidth) {
+					bestServerTypes.set(i, j);
+					if (debug) {
+						System.out.println("modify");
+					}
+					break;
+				}
+			}
 		}
-		bestCost = Graph.clientVertexNum * Graph.serverCost;
+	}
+	
+	public static void analyze() {
+		Map<Integer, Integer> count = new HashMap<Integer, Integer>();
+		for (int i = 0; i < Graph.diffServerCapacity.size(); i++) {
+			count.put(i, 0);
+		}
+		
+		for (int i = 0; i < Graph.clientDemand.length; i++) {
+			for (int j = 0; j < Graph.diffServerCapacity.size(); j++) {
+				if (j == Graph.diffServerCapacity.size() - 1) {
+					int c = count.get(j) + 1;
+					count.put(j, c);
+				}
+				if (Graph.clientDemand[i] < Graph.diffServerCapacity.get(j)) {
+					int c = count.get(j) + 1;
+					count.put(j, c);
+					break;
+				}
+			}
+		}
+		System.out.println(count);
+	}
+	
+	public static void isAllClients() {
+		List<Integer> diff = new ArrayList<Integer>();
+		for (int server : bestServers) {
+			boolean isClient = false;
+			for (int client : Graph.clientVertexId) {
+				if (client == server) {
+					isClient = true;
+				}
+			}
+			if (!isClient) {
+				diff.add(server);
+			}
+		}
+		System.out.println("Diff: " + diff);
 	}
 	
 	/**
@@ -408,7 +522,7 @@ public class Search {
 	private static void sortServers(List<Integer> removed) {
 		List<Node> removedServers = new ArrayList<Node>();
 		for (int removedServer : removed) {
-			removedServers.add(Node.getNode(removedServer));
+			removedServers.add(nodes[removedServer]);
 		}
 		Collections.sort(removedServers, new Comparator<Node>() {
 
@@ -425,30 +539,35 @@ public class Search {
 	}
 	
 	public static void main(String[] args) {
-		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\2\\case7.txt", null);
+		String[] graphContent;
+		if (debug) {
+			graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\2\\case0.txt", null);
+		}
+		else {
+			graphContent = FileUtil.read(args[0], null);
+		}
 		Graph.makeGraph(graphContent);
 		
 		long startTime = System.nanoTime();
+//		analyze();
 		dropDeterministicMove();
-//		bestServers.add(100);
-//		getAllCost(bestServers);
-//		System.out.println((System.nanoTime() - startTime) / 1000000);
 //		selectiveDrop();
-//		Arrays.sort(Graph.clientVertexId);
-//		System.out.println(Arrays.toString(Graph.clientVertexId));
-//		List<Integer> output = getMaxOutput();
-//		for (int i = 0; i < bestServers.size(); i++) {
-//			System.out.println(bestServers.get(i).toString() + ": " + output.get(i));
-//		}
-//		System.out.println(bestServers);
-		System.out.println(bestServers.size());
-		Zkw.clear();
-		Zkw.setSuperSource(bestServers);
-		Zkw.computeMinCostFlow();
-		solution = Zkw.getPaths();
-		System.out.println(solution);
-		long endTime = System.nanoTime();
-		System.out.println((endTime - startTime) / 1000000 + "ms");
+		if (debug) {
+			System.out.println(bestServers.size());
+			System.out.println(bestServers);
+			System.out.println(bestServerTypes);
+			Zkw.clear();
+			Zkw.setSuperSource(bestServers, bestServerTypes);
+			Zkw.computeMinCostFlow();
+			solution = Zkw.getPaths();
+			System.out.println(solution);
+			long endTime = System.nanoTime();
+			System.out.println((endTime - startTime) / 1000000 + "ms");
+		}
+		else {
+			System.out.println(args[0] + ":");
+			isAllClients();
+		}
 		System.out.println(bestCost);
 	}
 }

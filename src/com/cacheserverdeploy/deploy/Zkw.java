@@ -149,13 +149,17 @@ public class Zkw {
 		return true;
 	}
 	
-	public static void setSuperSource(List<Integer> servers) {
-		for (int server : servers) {
-			Edge edge = new Edge(Graph.vertexNum, server, 0, Integer.MAX_VALUE);
-			Edge resedge = new Edge(server, Graph.vertexNum, 0, Integer.MAX_VALUE);
+	public static void setSuperSource(List<Integer> servers, List<Integer> serverTypes) {
+		for (int i = 0; i < servers.size(); i++) {
+			int server = servers.get(i);
+			int serverType = serverTypes.get(i);
+			int serverCapacity = Graph.diffServerCapacity.get(serverType);
+			
+			Edge edge = new Edge(Graph.vertexNum, server, 0, serverCapacity);
+			Edge resedge = new Edge(server, Graph.vertexNum, 0, serverCapacity);
 			
 			resedge.residualFlow = 0;
-			edge.residualFlow = Integer.MAX_VALUE;
+			edge.residualFlow = serverCapacity;
 			resedge.counterEdge = edge;
 			edge.counterEdge = resedge;
 			resedge.isResidual = true;
@@ -191,9 +195,9 @@ public class Zkw {
 		}
 	}
 	
-	public static void computeFlowCostGivenServers(List<Integer> servers) {
+	public static void computeFlowCostGivenServers(List<Integer> servers, List<Integer> serverTypes) {
 		clear();
-		setSuperSource(servers);
+		setSuperSource(servers, serverTypes);
 		computeMinCostFlow();
 	}
 	
@@ -241,7 +245,7 @@ public class Zkw {
 	}
 	
 	public static void main(String[] args) {
-		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\case0.txt", null);
+		String[] graphContent = FileUtil.read("E:\\codecraft\\cdn\\case_example\\2\\case0.txt", null);
 		Graph.makeGraph(graphContent);
 //		
 		List<Integer> servers = new ArrayList<Integer>();
@@ -253,10 +257,20 @@ public class Zkw {
 		servers.add(15);
 		servers.add(38);
 		
-		setSuperSource(servers);
+		List<Integer> serverTypes = new ArrayList<Integer>();
+		serverTypes.add(0);
+		serverTypes.add(0);
+		serverTypes.add(0);
+		serverTypes.add(0);
+		serverTypes.add(0);
+		serverTypes.add(0);
+		serverTypes.add(0);
+		
+		Zkw.computeFlowCostGivenServers(servers, serverTypes);
 		long startTime = System.nanoTime();
 		
 		long endTime = System.nanoTime();
+		System.out.println("totalCost " + totalCost + " totalFlow " + totalFlow);
 		System.out.println((endTime - startTime) / 1000000);
 	}
 }

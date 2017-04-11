@@ -5,6 +5,7 @@ package com.cacheserverdeploy.deploy;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -17,7 +18,9 @@ public class Graph {
 	public static int edgeNum = 0;
 	public static int clientVertexNum = 0;
 	
-	public static int serverCost = 0;
+	public static List<Integer> diffServerCost = new ArrayList<Integer>();
+	public static List<Integer> diffServerCapacity = new ArrayList<Integer>();
+	public static int[] vertexCost;
 	public static int[] clientVertexId;
 	public static int[] clientDemand;
 	public static Map<Integer, Integer> vertexToClient = new HashMap<Integer, Integer>();
@@ -53,15 +56,28 @@ public class Graph {
 			resAdj[i] = new ArrayList<Edge>();
 		}
 		
-		
-		serverCost = Integer.parseInt(graphContent[2]);
+		// Read variable server cost
+		int startIndex = 2;
+		while (!graphContent[startIndex].isEmpty()) {
+			String[] serverInfo = graphContent[startIndex].split("\\s+");
+			diffServerCapacity.add(Integer.parseInt(serverInfo[1]));
+			diffServerCost.add(Integer.parseInt(serverInfo[2]));
+			startIndex++;
+		}
 		
 		// Initialize.
 		clientVertexId = new int[clientVertexNum];
 		clientDemand = new int[clientVertexNum];
+		// Read vertex cost
+		vertexCost = new int[vertexNum];
+		startIndex++;
+		for (int i = startIndex; i < startIndex + vertexNum; i++) {
+			vertexCost[i - startIndex] = Integer.parseInt(graphContent[i].split("\\s+")[1]);
+		}
 		
 		// Read edges
-		for (int i = 4; i < edgeNum + 4; i++) {
+		startIndex += vertexNum + 1;
+		for (int i = startIndex; i < edgeNum + startIndex; i++) {
 			String[] edgeInfo = graphContent[i].split("\\s+");
 			int start = Integer.parseInt(edgeInfo[0]);
 			int end = Integer.parseInt(edgeInfo[1]);
@@ -98,7 +114,8 @@ public class Graph {
 		}
 		
 		// Read clients
-		for (int i = edgeNum + 5; i < graphContent.length; i++) {
+		startIndex += edgeNum + 1;
+		for (int i = startIndex; i < graphContent.length; i++) {
 			String[] clientInfo = graphContent[i].split("\\s+");
 			int clientId = Integer.parseInt(clientInfo[0]);
 			int attachedVertexId = Integer.parseInt(clientInfo[1]);
