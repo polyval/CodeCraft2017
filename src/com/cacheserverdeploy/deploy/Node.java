@@ -27,6 +27,10 @@ public class Node implements Comparable<Node> {
 		return output + demands;
 	}
 	
+	public int getDeployCost() {
+		return cost + Graph.diffServerCost.get(Search.initialTypes.get(vertexId));
+	}
+	
 	@Override
 	public int compareTo(Node that) {
 //		return that.cost - this.cost;
